@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.julsh.backuptm</string>
+	<key>Program</key>
+	<string>/Users/julsh/scripts/backup_to_purple_if_available.sh</string>
+	<key>ThrottleInterval</key>
+	<integer>3600</integer>
+	<key>WatchPaths</key>
+	<array>
+		<string>/Library/Preferences/com.apple.powerlogd.plist</string>
+	</array>
+</dict>
+</plist>

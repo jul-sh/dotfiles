@@ -1,0 +1,91 @@
+[user]
+	name = Juliette Pretot
+	email = hi@juliette.sh
+[core]
+	excludesfile = /Users/juliettepretot/.gitignore_global
+  editor = code -n -w
+	ignorecase = false
+[commit]
+	template = /Users/juliettepretot/.stCommitMsg
+	gpgsign = false
+[push]
+	default = current
+[diff]
+    tool = default-difftool
+[difftool "default-difftool"]
+    cmd = code --wait --diff $LOCAL $REMOTE
+# Control how `git status` displays untracked files (recommended)
+[status]
+  showUntrackedFiles = all
+[alias]
+  # The basic aliases
+  s = status
+  cm = commit -m
+  cp = cherry-pick
+
+  # staging related aliases
+  all = add .
+
+  # Branch related aliases
+  br = branch
+  co = checkout
+  com = checkout master
+  cod = checkout develop
+
+  # Syncing related aliases
+  pur = pull --rebase
+  prune = fetch --prune
+
+  # Rebase related aliases
+  ri = rebase -i
+  rb = "!sh -c \"git rebase -i HEAD~$1\" -"
+  rc = rebase --continue
+  ra = rebase --abort
+  rs = rebase --skip
+  rod = rebase origin/develop
+  rom = rebase origin/master
+
+  # Stash related aliases
+  pop = stash pop
+  wip = commit -m "WIP" -n
+
+  # Push related aliases
+  pom = push origin master
+  pod = push origin develop
+  force = push --force-with-lease
+  fam = "!f() { git add . && git amend && git force; }; f"
+
+  # Mistake related aliases
+  abort = checkout -- .
+  nope = checkout -- .
+  wait = reset HEAD
+  undo = reset --soft HEAD^
+  amend = commit --amend --no-edit
+
+  # Diff related aliases
+  changes = diff --name-status
+  dic = diff --cached
+  diffstat = diff --stat
+  showtool = "!f() { git difftool $1^ $1; }; f"
+  count = "!f() { git rev-list --count HEAD ^${1-develop}; }; f"
+
+  # Log related aliases
+  lg = log --pretty=oneline --abbrev-commit --graph --decorate
+  overview = log --all --oneline --no-merges
+  changelog = "!sh -c \"git log --oneline --no-merges $1..HEAD\" -"
+
+  # Alias related aliases
+  aliases = ! git config --get-regexp ^alias\\. | sed -e s/^alias\\.// -e s/\\ /\\ =\\ /
+
+[filter "media"]
+  clean = git media clean %f
+  smudge = git media smudge %f
+  required = true
+
+  # Ensure that anything transfered is complete and sane (mandatory)
+[transfer]
+  fsckobjects = true
+[fetch]
+  fsckobjects = true
+[receive]
+  fsckObjects = true
