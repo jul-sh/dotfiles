@@ -1,5 +1,7 @@
+#!/bin/bash
+
 #
-# Configure CLI
+# Configure CLI.
 touch ~/.hushlogin
 
 for filename in $(find dot_files/.* -depth 0 -type f); do
