@@ -17,5 +17,5 @@ if ! command -v gpg &> /dev/null; then
 	exit 1;
 fi
 
-gpg --gen-random -a 0 30 | pbcopy
+gpg --gen-random -a 0 15 | pbcopy
 echo "Password Generated"
