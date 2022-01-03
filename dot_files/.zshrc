@@ -1,4 +1,5 @@
 export PATH="/usr/local/bin:$PATH"
+alias genpw="gpg --gen-random -a 0 15 | pbcopy && echo done"
 path+="/opt/homebrew/bin"
 echo -e "\e[3mHi girl, you're doing great this $(date +"%A"). —ฅ/ᐠ. ̫.ᐟ\ฅ—\e[0m"
 eval "$(starship init zsh)"
