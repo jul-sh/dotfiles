@@ -33,6 +33,8 @@ defaults write com.apple.dock "orientation" -string "left"
 killall Dock
 sudo killall Finder
 
+sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText "—ฅ/ᐠ. <032b> .ᐟ\\\ฅ— if it is lost, pls return this computer to hi@juliette.sh"
+
 #
 # Configure Terminal
 open ./julsh.terminal
