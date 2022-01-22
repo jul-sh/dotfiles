@@ -4,7 +4,7 @@
 # Download: https://www.gnupg.org/download/#sec-1-1
 
 # @raycast.schemaVersion 1
-# @raycast.title Generate Password
+# @raycast.title Generate PW
 # @raycast.mode silent
 # @raycast.author Sven Hofmann
 # @raycast.authorURL https://github.com/hofmannsven
