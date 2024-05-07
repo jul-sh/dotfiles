@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 #
 # Configure CLI.
@@ -12,7 +13,13 @@ done
 
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 /bin/bash -c "$(curl -fsSL https://starship.rs/install.sh)"
-/opt/homebrew/bin/brew install starship
+/opt/homebrew/bin/brew install starship fish fisher
+mkdir -p ~/.config/fish
+sudo sh -c 'echo /opt/homebrew/bin/fish >> /etc/shells'
+chsh -s /opt/homebrew/bin/fish
+echo "starship init fish | source" >> ~/.config/fish/config.fish
+fish set -U fish_greeting ""
+fisher install edc/bass
 
 #
 # Apps
@@ -42,6 +49,6 @@ defaults write com.apple.terminal "Default Window Settings" "julsh"
 
 #
 # Launch agents
-/bin/bash ./launchagent_remap_capslock_to_backspace/setup.sh
+(cd launchagent_remap_capslock_to_backspace && /bin/bash setup.sh)
 
 echo "All done! Pls see the manual_taks dir for remaining manual setup tasks."
