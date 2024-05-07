@@ -22,6 +22,7 @@
   s = status
   cm = commit -m
   cp = cherry-pick
+  fomo = !git fetch origin main && git rebase origin/main
 
   # staging related aliases
   all = add .
