@@ -1,7 +1,7 @@
 export PATH="/usr/local/bin:$PATH"
 path+="/opt/homebrew/bin"
 # start ZSH shell
-WHICH_ZSH="$(which ZSH)"
+WHICH_ZSH="$(which zsh)"
 if [[ "$-" =~ i && -x "${WHICH_ZSH}" && ! "${SHELL}" -ef "${WHICH_ZSH}" ]]; then
     # Safeguard to only activate ZSH for interactive shells and only if ZSH
     # shell is present and executable. Verify that this is a new session by
