@@ -5,3 +5,4 @@ plugins=(git zsh-autosuggestions history-substring-search zsh-syntax-highlightin
 source $ZSH/oh-my-zsh.sh
 
 echo -e "\e[3mHi girl, you're doing great this $(date +"%A"). —ฅ/ᐠ. ̫.ᐟ\ฅ—\e[0m"
+eval "$(starship init zsh)"
