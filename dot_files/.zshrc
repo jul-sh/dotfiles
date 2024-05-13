@@ -1,22 +1,13 @@
-# Set path to oh-my-zsh installation
-export ZSH="${HOME}/.oh-my-zsh"
-
-# Set name of the theme to load
-ZSH_THEME="robbyrussell"
-
-# Plugins to load
-plugins=(
-  git
-  zsh-autosuggestions
-  history-substring-search
-  zsh-syntax-highlighting
-)
+# Plugins
+source "${HOME}/.zsh-plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh"
+source "${HOME}/.zsh-plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
 # Plugin settings
-ZSH_AUTOSUGGEST_STRATEGY=(completion history)
+bindkey                            '^I'         menu-select
+bindkey -M menuselect              '^I'         menu-complete
+bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
 
-# Source the oh-my-zsh.sh script
-source "${ZSH}/oh-my-zsh.sh"
+zstyle ':autocomplete:tab:*' widget-style menu-complete
 
 # Print a greeting message
 echo -e "\e[3mHi girl, you're doing great this $(date +"%A"). —ฅ/ᐠ. ̫.ᐟ\ฅ—\e[0m"

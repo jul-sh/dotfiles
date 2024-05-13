@@ -21,10 +21,9 @@ sh -c "$(curl -fsSL https://starship.rs/install.sh)"
 /opt/homebrew/bin/brew install starship
 
 # Install zsh plugins
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-git clone https://github.com/zsh-users/zsh-autosuggestions.git "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
-git clone https://github.com/zsh-users/zsh-history-substring-search "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-history-substring-search"
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
+git clone https://github.com/zsh-users/zsh-autosuggestions.git "~/.zsh-plugins/zsh-autosuggestions"
+git clone https://github.com/zsh-users/zsh-history-substring-search "~/.zsh-plugins/zsh-history-substring-search"
+git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "~/.zsh-plugins/zsh-syntax-highlighting"
 
 # Install GUI apps using Homebrew Cask
 /opt/homebrew/bin/brew install --cask brave-browser raycast transmission iina visual-studio-code
