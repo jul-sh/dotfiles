@@ -21,8 +21,7 @@ sh -c "$(curl -fsSL https://starship.rs/install.sh)"
 /opt/homebrew/bin/brew install starship
 
 # Install zsh plugins
-git clone https://github.com/zsh-users/zsh-autosuggestions.git "~/.zsh-plugins/zsh-autosuggestions"
-git clone https://github.com/zsh-users/zsh-history-substring-search "~/.zsh-plugins/zsh-history-substring-search"
+git clone https://github.com/marlonrichert/zsh-autocomplete.git "~/.zsh-plugins/zsh-autocomplete"
 git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "~/.zsh-plugins/zsh-syntax-highlighting"
 
 # Install GUI apps using Homebrew Cask
