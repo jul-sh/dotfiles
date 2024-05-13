@@ -6,7 +6,7 @@ source "${HOME}/.zsh-plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 bindkey                            '^I'         menu-select
 bindkey -M menuselect              '^I'         menu-complete
 bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
-
+zstyle ':autocomplete:history-search-backward:*' list-lines 2000
 zstyle ':autocomplete:tab:*' widget-style menu-complete
 
 # Print a greeting message
