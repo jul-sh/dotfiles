@@ -11,9 +11,11 @@ znap prompt sindresorhus/pure
 
 znap install zsh-users/zsh-syntax-highlighting
 znap source zsh-users/zsh-syntax-highlighting
-znap install zsh-users/history-substring-search
-znap source zsh-users/history-substring-search
+znap install zsh-users/zsh-history-substring-search
+znap source zsh-users/zsh-history-substring-search
 znap install zsh-users/zsh-autosuggestions
 znap source zsh-users/zsh-autosuggestions
 
 ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd completion)
+
+eval "$(starship init zsh)"
