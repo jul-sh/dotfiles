@@ -11,14 +11,9 @@ znap prompt sindresorhus/pure
 
 znap install zsh-users/zsh-syntax-highlighting
 znap source zsh-users/zsh-syntax-highlighting
+znap install zsh-users/history-substring-search
+znap source zsh-users/history-substring-search
+znap install zsh-users/zsh-autosuggestions
+znap source zsh-users/zsh-autosuggestions
 
-znap install marlonrichert/zsh-autocomplete
-znap source marlonrichert/zsh-autocomplete
-
-bindkey "$terminfo[kcbt]" menu-select
-bindkey -M menuselect '^I' menu-complete
-bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
-zstyle ':autocomplete:tab:*' widget-style menu-complete
-zstyle ':autocomplete:*' min-input 3
-bindkey '^R' .history-incremental-search-backward
-bindkey '^S' .history-incremental-search-forward
+ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd completion)
