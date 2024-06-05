@@ -38,6 +38,7 @@ defaults write com.apple.dock "show-recents" -int 0
 defaults write com.apple.dock "minimize-to-application" -int 1
 defaults write com.apple.dock "tilesize" -int 34
 defaults write com.apple.dock "orientation" -string "left"
+defaults write com.apple.TextEdit NSShowAppCentricOpenPanelInsteadOfUntitledFile -bool false
 killall Dock
 sudo killall Finder
 
