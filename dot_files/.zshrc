@@ -18,14 +18,22 @@ source_github_file() {
   source "$dest_dir/$file_name"
 }
 
-source_github_file https://github.com/zsh-users/zsh-history-substring-search.git zsh-history-substring-search.zsh
-ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd completion)
-
 source_github_file https://github.com/marlonrichert/zsh-snap.git znap.zsh
+
+znap prompt sindresorhus/pure
 
 znap install zsh-users/zsh-syntax-highlighting
 znap source zsh-users/zsh-syntax-highlighting
-znap install zsh-users/zsh-autosuggestions
-znap source zsh-users/zsh-autosuggestions
 
-eval "$(starship init zsh)"
+znap install marlonrichert/zsh-autocomplete
+znap source marlonrichert/zsh-autocomplete
+
+bindkey "$terminfo[kcbt]" menu-select
+bindkey -M menuselect '^I' menu-complete
+bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
+zstyle ':autocomplete:tab:*' widget-style menu-complete
+zstyle ':autocomplete:*' min-input 3
+bindkey '^R' .history-incremental-search-backward
+bindkey '^S' .history-incremental-search-forward
+
+eval "$(direnv hook zsh)"
