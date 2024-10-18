@@ -1,12 +1,10 @@
 [user]
-	name = Juliette Pretot
-	email = hi@juliette.sh
+	name = Juliette Pluto
+	email = git@jul.sh
 [core]
-	excludesfile = /Users/juliettepretot/.gitignore_global
   editor = code -n -w
 	ignorecase = false
 [commit]
-	template = /Users/juliettepretot/.stCommitMsg
 	gpgsign = false
 [push]
 	default = current

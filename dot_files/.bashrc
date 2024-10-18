@@ -1,5 +1,6 @@
 export PATH="/usr/local/bin:$PATH"
 path+="/opt/homebrew/bin"
+
 # start ZSH shell
 WHICH_ZSH="$(which zsh)"
 if [[ "$-" =~ i && -x "${WHICH_ZSH}" && ! "${SHELL}" -ef "${WHICH_ZSH}" ]]; then
