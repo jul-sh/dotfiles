@@ -21,8 +21,8 @@ sh -c "$(curl -fsSL https://starship.rs/install.sh)"
 /opt/homebrew/bin/brew install starship
 
 # Install zsh plugins
-git clone https://github.com/marlonrichert/zsh-autocomplete.git "~/.zsh-plugins/zsh-autocomplete"
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "~/.zsh-plugins/zsh-syntax-highlighting"
+git clone https://github.com/marlonrichert/zsh-autocomplete.git "${HOME}/.zsh-plugins/zsh-autocomplete"
+git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "${HOME}/.zsh-plugins/zsh-syntax-highlighting"
 
 # Install GUI apps using Homebrew Cask
 /opt/homebrew/bin/brew install --cask brave-browser raycast transmission iina visual-studio-code
@@ -38,6 +38,7 @@ defaults write com.apple.dock "show-recents" -int 0
 defaults write com.apple.dock "minimize-to-application" -int 1
 defaults write com.apple.dock "tilesize" -int 34
 defaults write com.apple.dock "orientation" -string "left"
+defaults write com.apple.TextEdit NSShowAppCentricOpenPanelInsteadOfUntitledFile -bool false
 killall Dock
 sudo killall Finder
 

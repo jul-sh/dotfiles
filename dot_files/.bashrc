@@ -1,5 +1,7 @@
-export PATH="/usr/local/bin:$PATH"
-path+="/opt/homebrew/bin"
+# Source .profile if it exists
+if [ -f "$HOME/.profile" ]; then
+    . "$HOME/.profile"
+fi
 
 # start ZSH shell
 WHICH_ZSH="$(which zsh)"
@@ -13,3 +15,4 @@ if [[ "$-" =~ i && -x "${WHICH_ZSH}" && ! "${SHELL}" -ef "${WHICH_ZSH}" ]]; then
     # console and wants bash, so we skip this.
     exec env SHELL="${WHICH_ZSH}" "${WHICH_ZSH}" -i
 fi
+. "$HOME/.cargo/env"
