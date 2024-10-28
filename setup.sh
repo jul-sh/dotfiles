@@ -1,51 +1,85 @@
 #!/bin/bash
 set -e
 
-# Configure CLI
-touch ~/.hushlogin
+setup_shell() {
+    touch ~/.hushlogin
 
-# Copy dot files to home directory, skipping .DS_Store
-for filename in dot_files/.*; do
-  [[ -e "${filename}" ]] || continue
-  [[ "${filename}" != "dot_files/.DS_Store" ]] || continue
-  cp -v "${filename}" "~/"
-done
+    # Copy dotfiles, skipping .DS_Store
+    for filename in dot_files/.*; do
+        [[ -e "${filename}" && "${filename}" != "dot_files/.DS_Store" ]] && cp -v "${filename}" "~/"
+    done
 
-# Install Homebrew
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    git clone https://github.com/marlonrichert/zsh-autocomplete.git "${HOME}/.zsh-plugins/zsh-autocomplete"
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "${HOME}/.zsh-plugins/zsh-syntax-highlighting"
+}
 
-# Install Starship prompt
-sh -c "$(curl -fsSL https://starship.rs/install.sh)"
+install_packages() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        /opt/homebrew/bin/brew install starship
+        /opt/homebrew/bin/brew install --cask raycast zed cursor visual-studio-code
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        curl -sS https://starship.rs/install.sh | sh
+    fi
 
-# Install CLI tools using Homebrew
-/opt/homebrew/bin/brew install starship
+    sh -c "$(curl -fsSL https://starship.rs/install.sh)"
+}
 
-# Install zsh plugins
-git clone https://github.com/marlonrichert/zsh-autocomplete.git "${HOME}/.zsh-plugins/zsh-autocomplete"
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "${HOME}/.zsh-plugins/zsh-syntax-highlighting"
+configure_os() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # Capslock remapping
+        sudo cp ./macos/capslock_to_backspace.sh /Library/Scripts/
+        sudo chmod +x /Library/Scripts/capslock_to_backspace.sh
+        sudo cp ./macos/com.capslock_to_backspace.plist /Library/LaunchDaemons/
+        sudo launchctl load -w /Library/LaunchDaemons/com.capslock_to_backspace.plist
 
-# Install GUI apps using Homebrew Cask
-/opt/homebrew/bin/brew install --cask brave-browser raycast transmission iina visual-studio-code
+        # System preferences
+        defaults write com.apple.screencapture location -string "$HOME/Desktop"
+        defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+        defaults write NSGlobalDomain AppleShowScrollBars -string WhenScrolling
+        defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode{,2} -bool true
+        defaults write NSGlobalDomain PMPrintingExpandedStateForPrint{,2} -bool true
 
-# Set OSX System preferences
-defaults write NSGlobalDomain AppleShowAllExtensions -bool true
-defaults write NSGlobalDomain AppleShowScrollBars -string WhenScrolling
-defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
-defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
-defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
-defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
-defaults write com.apple.dock "show-recents" -int 0
-defaults write com.apple.dock "minimize-to-application" -int 1
-defaults write com.apple.dock "tilesize" -int 34
-defaults write com.apple.dock "orientation" -string "left"
-defaults write com.apple.TextEdit NSShowAppCentricOpenPanelInsteadOfUntitledFile -bool false
-killall Dock
-sudo killall Finder
+        # Dock settings
+        defaults write com.apple.dock show-recents -int 0
+        defaults write com.apple.dock minimize-to-application -int 1
+        defaults write com.apple.dock tilesize -int 34
+        defaults write com.apple.dock orientation -string "left"
 
-# Set login window message to with instructions for returning the computer
-sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText "—ฅ/ᐠ. <032b> .ᐟ\\\ฅ— if it is lost, pls return this computer to lost@jul.sh"
+        # TextEdit preferences
+        defaults write com.apple.TextEdit NSShowAppCentricOpenPanelInsteadOfUntitledFile -bool false
 
-# Setup launch agents
-(cd launchagent_remap_capslock_to_backspace && /bin/bash setup.sh)
+        # Set login window message
+        sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText \
+            "—ฅ/ᐠ. <032b> .ᐟ\\\ฅ— if it is lost, pls return this computer to lost@jul.sh"
 
-echo "All done! Pls see the manual_taks dir for remaining manual setup tasks."
+        # Restart system UI
+        killall Dock
+        sudo killall Finder
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        echo "Linux-specific configurations not implemented yet."
+    fi
+}
+
+install_fonts() {
+    echo "Installing fonts..."
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        font_dir=~/Library/Fonts
+    else
+        font_dir=~/.local/share/fonts
+        fc-cache -f -v
+    fi
+    mkdir -p "$font_dir"
+    find manual/fonts -name "*.ttf" -exec cp {} "$font_dir/" \;
+}
+
+main() {
+    setup_shell
+    install_packages
+    install_fonts
+    configure_os
+
+    echo "Setup complete!"
+}
+
+main
