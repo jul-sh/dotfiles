@@ -1,10 +1,8 @@
 . "$HOME/.cargo/env"
 
 alias python='python3'
-
+alias code='cursor'
+alias ai='aichat -e'
 export PATH="/usr/local/bin:$PATH"
 
 export PATH="$(python3 -m site --user-base)/bin:$PATH"
-
-export OPENAI_API_KEY=""
-export ANTHROPIC_API_KEY=""

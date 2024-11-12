@@ -8,9 +8,6 @@ setup_shell() {
     for filename in dot_files/.*; do
         [[ -e "${filename}" && "${filename}" != "dot_files/.DS_Store" ]] && cp -v "${filename}" "~/"
     done
-
-    git clone https://github.com/marlonrichert/zsh-autocomplete.git "${HOME}/.zsh-plugins/zsh-autocomplete"
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "${HOME}/.zsh-plugins/zsh-syntax-highlighting"
 }
 
 install_packages() {
