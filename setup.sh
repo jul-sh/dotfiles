@@ -2,19 +2,21 @@
 set -e
 
 setup_shell() {
-    touch ~/.hushlogin
+    touch "${HOME}/.hushlogin"
 
-    # Copy dotfiles, skipping .DS_Store
+    # Copy dotfiles, skipping .DS_Store and . directory
     for filename in dot_files/.*; do
-        [[ -e "${filename}" && "${filename}" != "dot_files/.DS_Store" ]] && cp -v "${filename}" "~/"
+        if [[ -f "${filename}" && "${filename}" != "dot_files/.DS_Store" ]]; then
+            cp -v "${filename}" "${HOME}/"
+        fi
     done
 }
 
 install_packages() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        /opt/homebrew/bin/brew install starship
-        /opt/homebrew/bin/brew install --cask raycast zed cursor visual-studio-code
+        /opt/homebrew/bin/brew install starship || true
+        /opt/homebrew/bin/brew install --cask raycast zed cursor visual-studio-code || true
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         curl -sS https://starship.rs/install.sh | sh
     fi
@@ -31,7 +33,7 @@ configure_os() {
         sudo launchctl load -w /Library/LaunchDaemons/com.capslock_to_backspace.plist
 
         # System preferences
-        defaults write com.apple.screencapture location -string "$HOME/Desktop"
+        defaults write com.apple.screencapture location -string "${HOME}/Desktop"
         defaults write NSGlobalDomain AppleShowAllExtensions -bool true
         defaults write NSGlobalDomain AppleShowScrollBars -string WhenScrolling
         defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode{,2} -bool true
@@ -61,9 +63,9 @@ configure_os() {
 install_fonts() {
     echo "Installing fonts..."
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        font_dir=~/Library/Fonts
+        font_dir=${HOME}/Library/Fonts
     else
-        font_dir=~/.local/share/fonts
+        font_dir=${HOME}/.local/share/fonts
         fc-cache -f -v
     fi
     mkdir -p "$font_dir"
