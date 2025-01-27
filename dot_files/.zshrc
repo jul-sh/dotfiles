@@ -33,6 +33,9 @@ load_plugin() {
 }
 
 load_plugin "zsh-syntax-highlighting" "https://github.com/zsh-users/zsh-syntax-highlighting.git" "db085e4661f6aafd24e5acb5b2e17e4dd5dddf3e" "0.8.0"
+load_plugin "zsh-autocomplete" "https://github.com/zsh-users/zsh-autosuggestions.git" "e52ee8ca55bcc56a17c828767a3f98f22a68d4eb" "v0.7.1"
+ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd completion)
+
 load_plugin "zsh-autocomplete" "https://github.com/marlonrichert/zsh-autocomplete.git" "762afacbf227ecd173e899d10a28a478b4c84a3f" "24.09.04"
 
 bindkey '^I' menu-select
