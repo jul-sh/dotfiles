@@ -3,6 +3,11 @@ if [ -f "${HOME}/.profile" ]; then
     source "${HOME}/.profile"
 fi
 
+# Source .local_profile if it exists
+if [ -f "${HOME}/.local_profile" ]; then
+    source "${HOME}/.local_profile"
+fi
+
 # Print a greeting message
 echo -e "\e[3mHi girl, you're doing great this $(date +"%A"). —ฅ/ᐠ. ̫.ᐟ\ฅ—\e[0m"
 
