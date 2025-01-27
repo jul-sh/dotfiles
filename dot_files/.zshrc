@@ -35,5 +35,12 @@ load_plugin() {
 load_plugin "zsh-syntax-highlighting" "https://github.com/zsh-users/zsh-syntax-highlighting.git" "db085e4661f6aafd24e5acb5b2e17e4dd5dddf3e" "0.8.0"
 load_plugin "zsh-autocomplete" "https://github.com/marlonrichert/zsh-autocomplete.git" "762afacbf227ecd173e899d10a28a478b4c84a3f" "24.09.04"
 
+bindkey '^I' menu-select
+bindkey -M menuselect '^I' menu-complete
+zstyle ':autocomplete:tab:*' widget-style menu-complete
+zstyle ':autocomplete:*' min-input 3
+bindkey '^R' .history-incremental-search-backward
+bindkey '^S' .history-incremental-search-forward
+
 # Initialize starship prompt
 eval "$(starship init zsh)"

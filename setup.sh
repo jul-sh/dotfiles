@@ -21,7 +21,11 @@ install_packages() {
         curl -sS https://starship.rs/install.sh | sh
     fi
 
-    sh -c "$(curl -fsSL https://starship.rs/install.sh)"
+    sh -c "$(curl -fsSL https://starship.rs/install.sh)" || true
+
+    # Install uv and aider
+    curl -LsSf https://astral.sh/uv/install.sh | sh || true
+    uv tool install --force --python python3.12 aider-chat@latest || true
 }
 
 configure_os() {
