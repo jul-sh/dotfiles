@@ -56,7 +56,7 @@ install_packages() {
 
   # --- Install Zellij (common for macOS and Linux) ---
   echo "Installing Zellij CLI..."
-  install_zellij_cli || { echo "Zellij installation failed."; return 1; }
+  cargo install zellij || { echo "Zellij installation failed."; return 1; }
 
   # --- Install Shpool using cargo ---
   echo "Installing Shpool with cargo..."
@@ -64,41 +64,6 @@ install_packages() {
 
 
   echo "Package installation complete!"
-}
-
-install_zellij_cli() {
-    local install_dir="$HOME/.local/bin"
-    mkdir -p "$install_dir"
-
-    local arch=$(uname -m)
-    if [[ "$arch" == "arm64" ]]; then
-        arch="aarch64"
-    fi
-    
-    local sys=""
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        sys="apple-darwin"
-    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        sys="unknown-linux-musl"
-    else
-      echo "Unsupported system: $OSTYPE"
-        return 1
-    fi
-
-    local url="https://github.com/zellij-org/zellij/releases/latest/download/zellij-${arch}-${sys}.tar.gz"
-    local download_path="$install_dir/zellij-$(date +%Y%m%d-%H%M%S).tar.gz"
-
-    curl --location "$url" -o "$download_path" || { echo "Zellij download failed."; return 1; }
-
-    tar -C "$install_dir" -xzf "$download_path" || { echo "Zellij extraction failed."; return 1; }
-
-    rm "$download_path"
-
-    ln -s "$install_dir/zellij" "$install_dir/zellij" || { echo "Zellij symlink creation failed."; return 1; }
-
-    echo "Zellij installed successfully in $install_dir."
-    echo "You can now run 'zellij' from your terminal. Ensure $install_dir is in your PATH environment variable"
-    return 0
 }
 
 configure_os() {
