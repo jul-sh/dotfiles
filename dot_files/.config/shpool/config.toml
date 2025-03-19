@@ -1,0 +1,3 @@
+motd = "dump"
+session_restore_mode = { lines = 1000 }
+forward_env = ["PWD"]
