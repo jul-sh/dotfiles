@@ -58,11 +58,6 @@ install_packages() {
   echo "Installing Zellij CLI..."
   cargo install zellij || { echo "Zellij installation failed."; return 1; }
 
-  # --- Install Shpool using cargo ---
-  echo "Installing Shpool with cargo..."
-  cargo install shpool || { echo "Shpool installation failed."; return 1; }
-
-
   echo "Package installation complete!"
 }
 
