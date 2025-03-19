@@ -45,5 +45,51 @@ zstyle ':autocomplete:*' min-input 3
 bindkey '^R' .history-incremental-search-backward
 bindkey '^S' .history-incremental-search-forward
 
+
+persist() {
+    # 1. Save current environment variables to a temporary file using export -p.
+    tmp_env_file=$(mktemp)
+    export -p > "$tmp_env_file" || { echo "Error: Failed to save environment variables to $tmp_env_file" >&2; return 1; }
+
+    # 2. Generate a random name for the shpool shell.
+    word1=$(shuf -n 1 /usr/share/dict/words 2>/dev/null | tr -d "[:punct:]'")
+    word2=$(shuf -n 1 /usr/share/dict/words 2>/dev/null | tr -d "[:punct:]'")
+    shpool_name="${word1}_${word2}"
+    shpool_name=$(echo "$shpool_name" | tr '[:upper:]' '[:lower:]')
+
+    # Check if /usr/share/dict/words exists.
+    if [ ! -f "/usr/share/dict/words" ]; then
+        if [ -f "/usr/share/dict/web2" ]; then
+            word1=$(shuf -n 1 /usr/share/dict/web2 2>/dev/null | tr -d "[:punct:]'")
+            word2=$(shuf -n 1 /usr/share/dict/web2 2>/dev/null | tr -d "[:punct:]'")
+            shpool_name="${word1}_${word2}"
+            shpool_name=$(echo "$shpool_name" | tr '[:upper:]' '[:lower:]')
+        else
+            if command -v getent &> /dev/null; then
+                word1=$(getent hosts | awk "{print \$2}" | shuf -n 1 | tr -d "[:punct:]")
+                word2=$(getent services | awk "{print \$1}" | shuf -n 1 | tr -d "[:punct:]")
+                shpool_name="${word1}_${word2}"
+                shpool_name=$(echo "$shpool_name" | tr '[:upper:]' '[:lower:]')
+            else
+                shpool_name="default_fallback"
+                echo "Warning: Using default shpool name 'default_fallback'. No word list found." >&2
+            fi
+        fi
+    fi
+
+    # 3. Prefix the current date and time to the name.
+    formatted_time=$(date "+%m-%dT%I:%M%p")
+    shpool_name="${formatted_time}_${shpool_name}"
+
+    # 4. Construct the command to restore environment variables, delete the temp file, AND start an interactive shell.
+    if [ -n "$SHELL" ] && command -v "$SHELL" &> /dev/null; then
+        echo "Entering new shpool session with name $shpool_name !"
+        restore_cmd="source \"$tmp_env_file\" && rm -f \"$tmp_env_file\" && $SHELL"
+        shpool attach "$shpool_name" --ttl "3d" --cmd "$SHELL -c '$restore_cmd'"
+    else
+        echo "Error: \$SHELL is not set or invalid."
+    fi
+}
+
 # Initialize starship prompt
 eval "$(starship init zsh)"
