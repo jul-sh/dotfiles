@@ -45,15 +45,5 @@ zstyle ':autocomplete:*' min-input 3
 bindkey '^R' .history-incremental-search-backward
 bindkey '^S' .history-incremental-search-forward
 
-
-# Alias for zellij to create and attach to main_session
-function zellij() {
-  if [[ "$#" -eq 0 ]]; then
-    command zellij attach --create main_session
-  else
-    command zellij "$@"  # Run zellij with arguments as they are
-  fi
-}
-
 # Initialize starship prompt
 eval "$(starship init zsh)"
