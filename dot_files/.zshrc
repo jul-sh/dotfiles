@@ -41,9 +41,8 @@ load_plugin "zsh-autocomplete" "https://github.com/marlonrichert/zsh-autocomplet
 bindkey '^I' menu-select
 bindkey -M menuselect '^I' menu-complete
 zstyle ':autocomplete:tab:*' widget-style menu-complete
+bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
 zstyle ':autocomplete:*' min-input 3
-bindkey '^R' .history-incremental-search-backward
-bindkey '^S' .history-incremental-search-forward
 
 # Initialize starship prompt
 eval "$(starship init zsh)"
