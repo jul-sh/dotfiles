@@ -28,6 +28,10 @@ install_packages() {
     echo "Installing Starship..."
     /opt/homebrew/bin/brew install starship || { echo "Starship installation failed."; return 1; }
 
+    # Install Wezterm
+    echo "Installing Wezterm..."
+    brew install --cask wezterm
+
     # Install other macOS packages
     echo "Installing raycast, zed, cursor, and Visual Studio Code..."
     /opt/homebrew/bin/brew install --cask raycast zed cursor visual-studio-code || { echo "macOS package installation failed."; return 1; }
@@ -36,6 +40,12 @@ install_packages() {
   elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
       echo "Installing Starship..."
       curl -sS https://starship.rs/install.sh | sh || { echo "Starship installation failed."; return 1; }
+
+      # Install Wezterm
+      echo "Installing Wezterm..."
+      curl -fsSL https://apt.fury.io/wez/gpg.key | sudo gpg --yes --dearmor -o /etc/apt/keyrings/wezterm-fury.gpg
+      echo 'deb [signed-by=/etc/apt/keyrings/wezterm-fury.gpg] https://apt.fury.io/wez/ * *' | sudo tee /etc/apt/sources.list.d/wezterm.list
+
   else
      echo "Unsupported OS: $OSTYPE"
      return 1
