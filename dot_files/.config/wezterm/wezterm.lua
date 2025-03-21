@@ -1,12 +1,27 @@
 local wezterm = require 'wezterm'
 
 return {
+  keys = {
+    -- Option + Left Arrow: Move back one word
+    {
+        key = 'LeftArrow',
+        mods = 'OPT',
+        action = wezterm.action.SendString('\x1bb'),  -- \x1b is the Escape character.
+    },
+    -- Option + Right Arrow: Move forward one word
+    {
+        key = 'RightArrow',
+        mods = 'OPT',
+        action = wezterm.action.SendString('\x1bf'),
+    },
+  },
   hide_tab_bar_if_only_one_tab = true,
   font = wezterm.font {
     family = "Iosevka Julsh Mono",  -- Corrected font name, assuming it's installed
     weight = "Medium",          -- Corrected to a valid weight string
   },
   font_size = 18.0,
+  adjust_window_size_when_changing_font_size = true,
 
   -- Set the initial window size.  Crucially, we use *columns* and *lines*,
   -- not pixel width and height.  Wezterm sizes windows in terms of the
