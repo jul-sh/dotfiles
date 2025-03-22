@@ -20,12 +20,16 @@ install_packages() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         echo "macOS detected. Installing Homebrew and packages..."
 
-        # Install Homebrew
-        echo "Installing Homebrew..."
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || {
-            echo "Homebrew installation failed."
-            return 1
-        }
+        # Install Homebrew (only if not already installed)
+        if ! command -v brew &> /dev/null; then
+            echo "Installing Homebrew..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || {
+                echo "Homebrew installation failed."
+                return 1
+            }
+        else
+            echo "Homebrew already installed."
+        fi
 
         # Install Starship
         echo "Installing Starship and fzf..."
@@ -36,7 +40,7 @@ install_packages() {
 
         # Install other macOS packages
         echo "Installing raycast, zed, cursor, fzf, and Visual Studio Code..."
-        /opt/homebrew/bin/brew install --cask raycast zed cursor visual-studio-code fzf || {
+        /opt/homebrew/bin/brew install --cask --force raycast zed cursor visual-studio-code fzf || {
             echo "macOS package installation failed."
             return 1
         }
