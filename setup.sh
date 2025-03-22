@@ -13,64 +13,83 @@ setup_shell() {
 }
 
 install_packages() {
-  # Function to install various packages based on OS
-  echo "Starting package installation..."
+    # Function to install various packages based on OS
+    echo "Starting package installation..."
 
-  # --- macOS (Darwin) Specific Installations ---
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    echo "macOS detected. Installing Homebrew and packages..."
+    # --- macOS (Darwin) Specific Installations ---
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "macOS detected. Installing Homebrew and packages..."
 
-    # Install Homebrew
-    echo "Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || { echo "Homebrew installation failed."; return 1; }
+        # Install Homebrew
+        echo "Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || {
+            echo "Homebrew installation failed."
+            return 1
+        }
 
-    # Install Starship
-    echo "Installing Starship and fzf..."
-    /opt/homebrew/bin/brew install starship fzf || { echo "Starship installation failed."; return 1; }
+        # Install Starship
+        echo "Installing Starship and fzf..."
+        /opt/homebrew/bin/brew install starship fzf || {
+            echo "Starship installation failed."
+            return 1
+        }
 
-    # Install Wezterm
-    echo "Installing Wezterm..."
-    brew install --cask wezterm
+        # Install other macOS packages
+        echo "Installing raycast, zed, cursor, fzf, and Visual Studio Code..."
+        /opt/homebrew/bin/brew install --cask raycast zed cursor visual-studio-code fzf || {
+            echo "macOS package installation failed."
+            return 1
+        }
 
-    # Install other macOS packages
-    echo "Installing raycast, zed, cursor, wezterm, and Visual Studio Code..."
-    /opt/homebrew/bin/brew install --cask raycast zed cursor visual-studio-code wezterm || { echo "macOS package installation failed."; return 1; }
+    # --- Linux Specific Installations ---
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        echo "Installing Starship..."
+        curl -sS https://starship.rs/install.sh | sh || {
+            echo "Starship installation failed."
+            return 1
+        }
 
-  # --- Linux Specific Installations ---
-  elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    echo "Installing Starship..."
-    curl -sS https://starship.rs/install.sh | sh || { echo "Starship installation failed."; return 1; }
+        # Install Wezterm
+        echo "Installing Wezterm..."
+        curl -fsSL https://apt.fury.io/wez/gpg.key | sudo gpg --yes --dearmor -o /etc/apt/keyrings/wezterm-fury.gpg
+        echo 'deb [signed-by=/etc/apt/keyrings/wezterm-fury.gpg] https://apt.fury.io/wez/ * *' | sudo tee /etc/apt/sources.list.d/wezterm.list
 
-    # Install Wezterm
-    echo "Installing Wezterm..."
-    curl -fsSL https://apt.fury.io/wez/gpg.key | sudo gpg --yes --dearmor -o /etc/apt/keyrings/wezterm-fury.gpg
-    echo 'deb [signed-by=/etc/apt/keyrings/wezterm-fury.gpg] https://apt.fury.io/wez/ * *' | sudo tee /etc/apt/sources.list.d/wezterm.list
+        echo "Installing fzf..."
+        sudo apt install fzf
+    else
+        echo "Unsupported OS: $OSTYPE"
+        return 1
+    fi
 
-    echo "Installing fzf..."
-    sudo apt install fzf
-  else
-     echo "Unsupported OS: $OSTYPE"
-     return 1
-  fi
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+    rustup toolchain install nightly --allow-downgrade --profile minimal --component clippy
 
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain none -y
-  rustup toolchain install nightly --allow-downgrade --profile minimal --component clippy
+    # --- Install Starship (common for macOS and Linux) ---
+    echo "Installing Starship (common)..."
+    sh -c "$(curl -fsSL https://starship.rs/install.sh)" || {
+        echo "Starship installation failed."
+        return 1
+    }
 
+    # --- Install uv and aider (common for macOS and Linux) ---
+    echo "Installing uv and aider..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh || {
+        echo "uv installation failed."
+        return 1
+    }
+    uv tool install --force --python python3.12 aider-chat@latest || {
+        echo "aider installation failed."
+        return 1
+    }
 
-  # --- Install Starship (common for macOS and Linux) ---
-  echo "Installing Starship (common)..."
-  sh -c "$(curl -fsSL https://starship.rs/install.sh)" || { echo "Starship installation failed."; return 1; }
+    # --- Install Zellij (common for macOS and Linux) ---
+    echo "Installing Zellij CLI..."
+    cargo install zellij || {
+        echo "Zellij installation failed."
+        return 1
+    }
 
-  # --- Install uv and aider (common for macOS and Linux) ---
-  echo "Installing uv and aider..."
-  curl -LsSf https://astral.sh/uv/install.sh | sh || { echo "uv installation failed."; return 1; }
-  uv tool install --force --python python3.12 aider-chat@latest || { echo "aider installation failed."; return 1; }
-
-  # --- Install Zellij (common for macOS and Linux) ---
-  echo "Installing Zellij CLI..."
-  cargo install zellij || { echo "Zellij installation failed."; return 1; }
-
-  echo "Package installation complete!"
+    echo "Package installation complete!"
 }
 
 configure_os() {
