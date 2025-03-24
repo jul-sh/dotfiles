@@ -17,7 +17,7 @@ install_packages() {
     echo "Starting package installation..."
 
     echo "Installing Starship..."
-    curl -sS https://starship.rs/install.sh | sh -- --force || {
+    curl -sS https://starship.rs/install.sh | sh -s -- --force || {
         echo "Starship installation failed."
         return 1
     }
@@ -40,7 +40,7 @@ install_packages() {
         # Install fzf
         echo "Installing fzf..."
         /opt/homebrew/bin/brew install fzf || {
-            echo "Starship installation failed."
+            echo "fzf installation failed."
             return 1
         }
 
@@ -67,13 +67,6 @@ install_packages() {
 
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain none -y
     rustup toolchain install nightly --allow-downgrade --profile minimal --component clippy
-
-    # --- Install Starship (common for macOS and Linux) ---
-    echo "Installing Starship (common)..."
-    sh -c "$(curl -fsSL https://starship.rs/install.sh)" || {
-        echo "Starship installation failed."
-        return 1
-    }
 
     # --- Install uv and aider (common for macOS and Linux) ---
     echo "Installing uv and aider..."
