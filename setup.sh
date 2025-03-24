@@ -16,6 +16,12 @@ install_packages() {
     # Function to install various packages based on OS
     echo "Starting package installation..."
 
+    echo "Installing Starship..."
+    curl -sS https://starship.rs/install.sh | sh -- --force || {
+        echo "Starship installation failed."
+        return 1
+    }
+
     # --- macOS (Darwin) Specific Installations ---
     if [[ "$OSTYPE" == "darwin"* ]]; then
         echo "macOS detected. Installing Homebrew and packages..."
@@ -31,9 +37,9 @@ install_packages() {
             echo "Homebrew already installed."
         fi
 
-        # Install Starship
-        echo "Installing Starship and fzf..."
-        /opt/homebrew/bin/brew install starship fzf || {
+        # Install fzf
+        echo "Installing fzf..."
+        /opt/homebrew/bin/brew install fzf || {
             echo "Starship installation failed."
             return 1
         }
@@ -47,12 +53,6 @@ install_packages() {
 
     # --- Linux Specific Installations ---
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo "Installing Starship..."
-        curl -sS https://starship.rs/install.sh | sh || {
-            echo "Starship installation failed."
-            return 1
-        }
-
         # Install Wezterm
         echo "Installing Wezterm..."
         curl -fsSL https://apt.fury.io/wez/gpg.key | sudo gpg --yes --dearmor -o /etc/apt/keyrings/wezterm-fury.gpg
