@@ -11,33 +11,33 @@ fi
 # Print a greeting message
 echo -e "\e[3mHi girl, you're doing great this $(date +"%A"). —ฅ/ᐠ. ̫.ᐟ\ฅ—\e[0m"
 
-source_github_file() {
-  local repo_url="$1"
-  local file_name="$2"
+# Plugins
+load_plugin() {
+  local plugin_repo="$1"
+  local plugin_commit="$2"
+  local plugin_branch="$3"
+  local plugin_name
+  plugin_name=$(basename "$plugin_repo" .git)
+  local plugin_dir="${HOME}/.zsh-plugins/${plugin_name}"
 
-  # Extract the repository name from the URL
-  local repo_name=$(basename "$repo_url" .git)
+  if [ ! -d "${plugin_dir}" ]; then
+    git clone --depth 1 --branch "${plugin_branch}" "${plugin_repo}" "${plugin_dir}"
+    local current_commit=$(git -C "${plugin_dir}" rev-parse HEAD)
+    if [ "${current_commit}" != "${plugin_commit}" ]; then
+      echo "⚠️  Security Warning: The ${plugin_name} plugin from ${plugin_repo} (branch ${plugin_branch}) has an unexpected commit (${current_commit}) that does not match the expected commit (${plugin_commit}). For your safety, this plugin was not loaded, and the directory was removed to prevent potential remote code execution vulnerabilities."
+      rm -rf "${plugin_dir}"
+      return
+    fi
+  fi
 
-  # Define the destination directory based on the repository name
-  local dest_dir="$HOME/.zsh/$repo_name"
-
-  # Check if the directory exists, if not, clone the repository
-  [[ -d "$dest_dir" ]] || git clone --depth 1 -- "$repo_url" "$dest_dir"
-
-  # Source the specified file
-  source "$dest_dir/$file_name"
+  source "${plugin_dir}/${plugin_name}.plugin.zsh"
 }
 
-source_github_file https://github.com/marlonrichert/zsh-snap.git znap.zsh
+load_plugin "https://github.com/zsh-users/zsh-syntax-highlighting.git" "db085e4661f6aafd24e5acb5b2e17e4dd5dddf3e" "0.8.0"
+load_plugin "https://github.com/zsh-users/zsh-autosuggestions.git" "e52ee8ca55bcc56a17c828767a3f98f22a68d4eb" "v0.7.1"
+ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd completion)
 
-znap install zsh-users/zsh-syntax-highlighting
-znap source zsh-users/zsh-syntax-highlighting
-
-znap install zsh-users/zsh-autosuggestions
-znap source zsh-users/zsh-autosuggestions
-
-znap install marlonrichert/zsh-autocomplete
-znap source marlonrichert/zsh-autocomplete
+load_plugin "https://github.com/marlonrichert/zsh-autocomplete.git" "762afacbf227ecd173e899d10a28a478b4c84a3f" "24.09.04"
 
 bindkey '^I' menu-select
 bindkey -M menuselect '^I' menu-complete
