@@ -61,12 +61,5 @@ zle -N fzf-history-widget         # Create a widget from the function
 bindkey '^[[A' fzf-history-widget # Bind up arrow (ANSI escape code)
 bindkey '^R' fzf-history-widget   # Also bind Ctrl+R (optional, good for consistency)
 
-autoload -Uz compinit
-if ! [[ -f ${ZDOTDIR:-$HOME}/.zcompdump ]]; then
-  compinit -i
-else
-  compinit -C -i
-fi
-
 # Initialize starship prompt
 eval "$(starship init zsh)"
