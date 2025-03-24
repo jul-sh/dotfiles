@@ -39,8 +39,8 @@ install_packages() {
         }
 
         # Install other macOS packages
-        echo "Installing raycast, zed, cursor, fzf, and Visual Studio Code..."
-        /opt/homebrew/bin/brew install --cask --force raycast zed cursor visual-studio-code fzf || {
+        echo "Installing raycast, zed, cursor, and Visual Studio Code..."
+        /opt/homebrew/bin/brew install --cask --force raycast zed cursor visual-studio-code || {
             echo "macOS package installation failed."
             return 1
         }
