@@ -141,7 +141,7 @@ install_fonts() {
         fc-cache -f -v
     fi
     mkdir -p "$font_dir"
-    find manual/fonts -name "*.ttf" -exec cp {} "$font_dir/" \;
+    find fonts -name "*.ttf" -exec cp {} "$font_dir/" \;
 }
 
 main() {
