@@ -141,7 +141,7 @@ main() {
     setup_shell
     install_packages
     install_fonts
-    configure_os
+    configure_os || echo "configure_os failed but continuing..."
 
     echo "Setup complete!"
 }
