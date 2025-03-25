@@ -69,10 +69,6 @@ install_packages() {
         echo "uv installation failed."
         return 1
     }
-    uv tool install --force --python python3.12 aider-chat@latest || {
-        echo "aider installation failed."
-        return 1
-    }
 
     echo "Installing Zellij CLI..."
     cargo install zellij || {
