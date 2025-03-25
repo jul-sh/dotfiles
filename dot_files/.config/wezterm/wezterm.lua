@@ -1,5 +1,24 @@
 local wezterm = require 'wezterm'
 
+-- set size of newly opened windows. ref https://github.com/wezterm/wezterm/issues/3173
+wezterm.on('window-config-reloaded', function(window, pane)
+  -- approximately identify this gui window, by using the associated mux id
+  local id = tostring(window:window_id())
+
+  -- maintain a mapping of windows that we have previously seen before in this event handler
+  local seen = wezterm.GLOBAL.seen_windows or {}
+  -- set a flag if we haven't seen this window before
+  local is_new_window = not seen[id]
+  -- and update the mapping
+  seen[id] = true
+  wezterm.GLOBAL.seen_windows = seen
+
+  -- now act upon the flag
+  if is_new_window then
+    window:set_inner_size(2500, 1700)
+  end
+end)
+
 return {
   window_close_confirmation = "NeverPrompt",
   keys = {
