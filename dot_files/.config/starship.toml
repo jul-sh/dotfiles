@@ -1,0 +1,10 @@
+[hostname]
+ssh_only = false  # Show the hostname even when not over SSH
+format = "[$hostname]($style) "  # Define how it appears in the prompt
+style = "bold blue"  # Choose a style (color, bold, etc.)
+
+[aws]
+disabled = true
+
+[gcloud]
+disabled = true
