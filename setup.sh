@@ -23,7 +23,7 @@ install_packages() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         echo "macOS detected. Installing Homebrew and packages..."
 
-        if ! command -v brew &> /dev/null; then
+        if ! command -v brew &>/dev/null; then
             echo "Installing Homebrew..."
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || {
                 echo "Homebrew installation failed."
@@ -58,6 +58,10 @@ install_packages() {
     fi
 
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+
+    # Source the rustup environment variables so `rustup` is in the path for this shell
+    source "$HOME/.cargo/env"
+
     rustup toolchain install nightly --allow-downgrade --profile minimal --component clippy
 
     echo "Installing uv and aider..."
