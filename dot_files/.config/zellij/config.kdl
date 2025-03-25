@@ -385,7 +385,7 @@ load_plugins {
 // (Requires restart)
 // Default: false
 //
-// mirror_session true
+mirror_session true
 
 // The folder in which Zellij will look for layouts
 // (Requires restart)
