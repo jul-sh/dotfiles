@@ -21,10 +21,16 @@ load_plugin() {
   local plugin_dir="${HOME}/.zsh-plugins/${plugin_name}"
 
   if [ ! -d "${plugin_dir}" ]; then
-    git clone --depth 1 --branch "${plugin_branch}" "${plugin_repo}" "${plugin_dir}"
+    if [ -n "${plugin_branch}" ]; then
+      git clone --depth 1 --branch "${plugin_branch}" "${plugin_repo}" "${plugin_dir}"
+    else
+      git clone --depth 1 "${plugin_repo}" "${plugin_dir}"
+      git -C "${plugin_dir}" checkout "${plugin_commit}"
+    fi
+
     local current_commit=$(git -C "${plugin_dir}" rev-parse HEAD)
     if [ "${current_commit}" != "${plugin_commit}" ]; then
-      echo "⚠️  Security Warning: The ${plugin_name} plugin from ${plugin_repo} (branch ${plugin_branch}) has an unexpected commit (${current_commit}) that does not match the expected commit (${plugin_commit}). For your safety, this plugin was not loaded, and the directory was removed to prevent potential remote code execution vulnerabilities."
+      echo "⚠️  Security Warning: The ${plugin_name} plugin from ${plugin_repo}${plugin_branch:+ (branch ${plugin_branch})} has an unexpected commit (${current_commit}) that does not match the expected commit (${plugin_commit}). For your safety, this plugin was not loaded, and the directory was removed to prevent potential remote code execution vulnerabilities."
       rm -rf "${plugin_dir}"
       return
     fi
@@ -38,28 +44,14 @@ load_plugin "https://github.com/zsh-users/zsh-autosuggestions.git" "e52ee8ca55bc
 ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd completion)
 
 load_plugin "https://github.com/marlonrichert/zsh-autocomplete.git" "762afacbf227ecd173e899d10a28a478b4c84a3f" "24.09.04"
+export ZSH_FZF_HISTORY_SEARCH_BIND="^[[A"
+load_plugin "https://github.com/joshskidmore/zsh-fzf-history-search" "d5a9730b5b4cb0b39959f7f1044f9c52743832ba"
 
 bindkey '^I' menu-select
 bindkey -M menuselect '^I' menu-complete
 zstyle ':autocomplete:tab:*' widget-style menu-complete
 bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
 zstyle ':autocomplete:*' min-input 3
-
-fzf-history-widget() {
-  local selected=$(
-    fc -l 1 |
-      sed 's/^[ ]*[0-9]*[ ]*//' |
-      fzf --query="$LBUFFER" --prompt="History: " +s --tac
-  )
-  if [[ -n "$selected" ]]; then
-    LBUFFER="$selected"
-    zle redisplay
-  fi
-}
-
-zle -N fzf-history-widget         # Create a widget from the function
-bindkey '^[[A' fzf-history-widget # Bind up arrow (ANSI escape code)
-bindkey '^R' fzf-history-widget   # Also bind Ctrl+R (optional, good for consistency)
 
 # Initialize starship prompt
 eval "$(starship init zsh)"
