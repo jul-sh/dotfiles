@@ -4,7 +4,6 @@ set -e
 setup_shell() {
     touch "${HOME}/.hushlogin"
 
-    # Copy dotfiles, skipping .DS_Store and . directory
     for filename in dot_files/.*; do
         if [[ -f "${filename}" && "${filename}" != "dot_files/.DS_Store" ]]; then
             cp -v "${filename}" "${HOME}/"
@@ -13,7 +12,6 @@ setup_shell() {
 }
 
 install_packages() {
-    # Function to install various packages based on OS
     echo "Starting package installation..."
 
     echo "Installing Starship..."
@@ -22,11 +20,9 @@ install_packages() {
         return 1
     }
 
-    # --- macOS (Darwin) Specific Installations ---
     if [[ "$OSTYPE" == "darwin"* ]]; then
         echo "macOS detected. Installing Homebrew and packages..."
 
-        # Install Homebrew (only if not already installed)
         if ! command -v brew &> /dev/null; then
             echo "Installing Homebrew..."
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || {
@@ -37,23 +33,19 @@ install_packages() {
             echo "Homebrew already installed."
         fi
 
-        # Install fzf
         echo "Installing fzf..."
         /opt/homebrew/bin/brew install fzf || {
             echo "fzf installation failed."
             return 1
         }
 
-        # Install other macOS packages
         echo "Installing raycast, zed, cursor, and Visual Studio Code..."
         /opt/homebrew/bin/brew install --cask --force raycast zed cursor visual-studio-code || {
             echo "macOS package installation failed."
             return 1
         }
 
-    # --- Linux Specific Installations ---
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        # Install Wezterm
         echo "Installing Wezterm..."
         curl -fsSL https://apt.fury.io/wez/gpg.key | sudo gpg --yes --dearmor -o /etc/apt/keyrings/wezterm-fury.gpg
         echo 'deb [signed-by=/etc/apt/keyrings/wezterm-fury.gpg] https://apt.fury.io/wez/ * *' | sudo tee /etc/apt/sources.list.d/wezterm.list
@@ -68,7 +60,6 @@ install_packages() {
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain none -y
     rustup toolchain install nightly --allow-downgrade --profile minimal --component clippy
 
-    # --- Install uv and aider (common for macOS and Linux) ---
     echo "Installing uv and aider..."
     curl -LsSf https://astral.sh/uv/install.sh | sh || {
         echo "uv installation failed."
@@ -79,7 +70,6 @@ install_packages() {
         return 1
     }
 
-    # --- Install Zellij (common for macOS and Linux) ---
     echo "Installing Zellij CLI..."
     cargo install zellij || {
         echo "Zellij installation failed."
@@ -91,33 +81,29 @@ install_packages() {
 
 configure_os() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        # Capslock remapping
         sudo cp ./macos/capslock_to_backspace.sh /Library/Scripts/
         sudo chmod +x /Library/Scripts/capslock_to_backspace.sh
         sudo cp ./macos/com.capslock_to_backspace.plist /Library/LaunchDaemons/
         sudo launchctl load -w /Library/LaunchDaemons/com.capslock_to_backspace.plist
 
-        # System preferences
         defaults write com.apple.screencapture location -string "${HOME}/Desktop"
         defaults write NSGlobalDomain AppleShowAllExtensions -bool true
-        defaults write NSGlobalDomain AppleShowScrollBars -string WhenScrolling
-        defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode{,2} -bool true
-        defaults write NSGlobalDomain PMPrintingExpandedStateForPrint{,2} -bool true
+        defaults write NSGlobalDomain AppleShowScrollBars -string "WhenScrolling"
+        defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
+        defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
+        defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
+        defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
 
-        # Dock settings
         defaults write com.apple.dock show-recents -int 0
         defaults write com.apple.dock minimize-to-application -int 1
         defaults write com.apple.dock tilesize -int 34
         defaults write com.apple.dock orientation -string "left"
 
-        # TextEdit preferences
         defaults write com.apple.TextEdit NSShowAppCentricOpenPanelInsteadOfUntitledFile -bool false
 
-        # Set login window message
         sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText \
-            "—ฅ/ᐠ. <032b> .ᐟ\\\ฅ— if it is lost, pls return this computer to lost@jul.sh"
+            "—ฅ/ᐠ. ̫.ᐟ\\\ฅ— if it is lost, pls return this computer to lost@jul.sh"
 
-        # Restart system UI
         killall Dock
         sudo killall Finder
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -141,7 +127,7 @@ main() {
     setup_shell
     install_packages
     install_fonts
-    configure_os || echo "configure_os failed but continuing..."
+    configure_os
 
     echo "Setup complete!"
 }
