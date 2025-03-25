@@ -16,6 +16,7 @@ wezterm.on('window-config-reloaded', function(window, pane)
   -- now act upon the flag
   if is_new_window then
     window:set_inner_size(2500, 1700)
+    window:focus()
   end
 end)
 
