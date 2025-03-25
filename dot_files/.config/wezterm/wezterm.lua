@@ -1,6 +1,7 @@
 local wezterm = require 'wezterm'
 
 return {
+  window_close_confirmation = "NeverPrompt",
   keys = {
     -- Option + Left Arrow: Move back one word
     {
