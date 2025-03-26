@@ -11,6 +11,9 @@ fi
 # Print a greeting message
 echo -e "\e[3mHi girl, you're doing great this $(date +"%A"). —ฅ/ᐠ. ̫.ᐟ\ฅ—\e[0m"
 
+# Show hidden files in completions
+setopt globdots
+
 # Plugins
 load_plugin() {
   local plugin_repo="$1"
