@@ -57,7 +57,7 @@ return {
   window_background_opacity = 1, -- Makes the background slightly transparent
 
   -- Disable the scrollbar (optional, but cleans up the UI)
-  enable_scroll_bar = false,
+  enable_scroll_bar = true,
 
   -- Adjust line height.  This can improve readability, especially with
   -- monospaced fonts.  A value of 1.0 is the default.  Values greater
