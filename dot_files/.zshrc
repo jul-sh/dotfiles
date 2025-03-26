@@ -39,19 +39,15 @@ load_plugin() {
   source "${plugin_dir}/${plugin_name}.plugin.zsh"
 }
 
+autoload -U compinit
+compinit
+load_plugin "https://github.com/Aloxaf/fzf-tab.git" "01dad759c4466600b639b442ca24aebd5178e799" "v1.2.0"
 load_plugin "https://github.com/zsh-users/zsh-syntax-highlighting.git" "db085e4661f6aafd24e5acb5b2e17e4dd5dddf3e" "0.8.0"
 load_plugin "https://github.com/zsh-users/zsh-autosuggestions.git" "e52ee8ca55bcc56a17c828767a3f98f22a68d4eb" "v0.7.1"
 ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd completion)
 
-load_plugin "https://github.com/marlonrichert/zsh-autocomplete.git" "762afacbf227ecd173e899d10a28a478b4c84a3f" "24.09.04"
 export ZSH_FZF_HISTORY_SEARCH_BIND="^[[A"
 load_plugin "https://github.com/joshskidmore/zsh-fzf-history-search" "d5a9730b5b4cb0b39959f7f1044f9c52743832ba"
-
-bindkey '^I' menu-select
-bindkey -M menuselect '^I' menu-complete
-zstyle ':autocomplete:tab:*' widget-style menu-complete
-bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
-zstyle ':autocomplete:*' min-input 3
 
 # Initialize starship prompt
 eval "$(starship init zsh)"
