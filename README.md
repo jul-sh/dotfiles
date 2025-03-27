@@ -7,5 +7,5 @@ My personal dotfiles and system configuration.
 Copy and paste this command to clone the repo and run the setup script:
 
 ```bash
-git clone https://github.com/jul-sh/dotfiles.git && cd dotfiles && ./setup.sh
+tmpdir=$(mktemp -d) && git clone https://github.com/jul-sh/dotfiles.git "$tmpdir" && cd "$tmpdir" && ./setup.sh
 ```
