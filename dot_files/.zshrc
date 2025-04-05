@@ -14,6 +14,9 @@ echo -e "\e[3mHi girl, you're doing great this $(date +"%A"). —ฅ/ᐠ. ̫.ᐟ
 # Show hidden files in completions
 setopt globdots
 
+# Don't error on comments in shell
+setopt interactivecomments
+
 # Plugins
 load_plugin() {
   local plugin_repo="$1"
