@@ -74,4 +74,7 @@ return {
 
   -- Other good defaults:
   enable_wayland = true,  -- Use Wayland if available.  Set to false to force X11.
+
+  -- This stops WezTerm from quitting the whole window when a single pane/tab exits.
+  exit_behavior = "Close",
 }
