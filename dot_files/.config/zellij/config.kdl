@@ -167,20 +167,17 @@ keybinds {
         bind "x" { CloseFocus; SwitchToMode "Normal"; }
     }
     shared_except "locked" {
-        unbind "Alt Right" // binds to toggling floating plane by default
-        unbind "Alt f" // binds to toggling floating plane by default
-        unbind "Alt n" // binds to adding new pane by default
         bind "Ctrl g" { SwitchToMode "Locked"; }
         bind "Ctrl q" { Quit; }
-        bind "Alt t" { NewTab; SwitchToMode "Normal"; }
-        bind "Alt w" { CloseTab; SwitchToMode "Normal"; }
+        unbind "Alt f" { ToggleFloatingPanes; }
+        bind "Alt n" { NewPane; }
         bind "Alt i" { MoveTab "Left"; }
         bind "Alt o" { MoveTab "Right"; }
-        bind "Alt h" { MoveFocusOrTab "Left"; }
-        bind "Alt l" { MoveFocusOrTab "Right"; }
-        bind "Alt j" { MoveFocus "Down"; }
-        bind "Alt k" { MoveFocus "Up"; }
-        bind "Alt =" { Resize "Increase"; }
+        bind "Alt h" "Alt Left" { MoveFocusOrTab "Left"; }
+        bind "Alt l" "Alt Right" { MoveFocusOrTab "Right"; }
+        bind "Alt j" "Alt Down" { MoveFocus "Down"; }
+        bind "Alt k" "Alt Up" { MoveFocus "Up"; }
+        bind "Alt =" "Alt +" { Resize "Increase"; }
         bind "Alt -" { Resize "Decrease"; }
         bind "Alt [" { PreviousSwapLayout; }
         bind "Alt ]" { NextSwapLayout; }
@@ -203,7 +200,7 @@ keybinds {
     shared_except "tab" "locked" {
         bind "Ctrl t" { SwitchToMode "Tab"; }
     }
-    shared_except "tab" "locked" {
+    shared_except "move" "locked" {
         bind "Ctrl h" { SwitchToMode "Move"; }
     }
     shared_except "tmux" "locked" {
@@ -388,7 +385,7 @@ load_plugins {
 // (Requires restart)
 // Default: false
 //
-mirror_session true
+// mirror_session true
 
 // The folder in which Zellij will look for layouts
 // (Requires restart)
