@@ -7,7 +7,7 @@
 # @raycast.packageName Navigation
 #
 # Optional parameters:
-# @raycast.icon 📟
+# @raycast.icon 📇
 #
 # Documentation:
 # @raycast.description Open current Terminal directory in Finder
