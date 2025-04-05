@@ -6,7 +6,8 @@ setup_shell() {
 
     for filename in dot_files/.*; do
         if [[ -f "${filename}" && "${filename}" != "dot_files/.DS_Store" ]]; then
-            cp -v "${filename}" "${HOME}/"
+            # Use -f to force overwriting existing files
+            cp -fv "${filename}" "${HOME}/"
         fi
     done
 }
