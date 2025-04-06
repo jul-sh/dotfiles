@@ -11,7 +11,7 @@
 [diff]
     tool = default-difftool
 [difftool "default-difftool"]
-    cmd = code --wait --diff $LOCAL $REMOTE
+    cmd = zed --wait
 # Control how `git status` displays untracked files (recommended)
 [status]
   showUntrackedFiles = all
