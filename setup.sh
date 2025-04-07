@@ -4,10 +4,30 @@ set -e
 setup_shell() {
     touch "${HOME}/.hushlogin"
 
-    for filename in dotfiles/.*; do
-        if [[ -f "${filename}" && "${filename}" != "dotfiles/.DS_Store" ]]; then
-            # Use -f to force overwriting existing files
-            cp -fv "${filename}" "${HOME}/"
+    # Ensure the dotfiles directory exists
+    if [[ ! -d "dotfiles" ]]; then
+        echo "Error: 'dotfiles' directory not found in the current directory."
+        return 1
+    fi
+
+    # Get the absolute path of the dotfiles directory
+    local dotfiles_dir
+    dotfiles_dir="$(pwd)/dotfiles"
+
+    for filepath in "${dotfiles_dir}"/.*; do
+        local filename
+        filename=$(basename "${filepath}")
+        # Skip . and .. and .DS_Store
+        if [[ "${filename}" == "." || "${filename}" == ".." || "${filename}" == ".DS_Store" ]]; then
+            continue
+        fi
+
+        # Check if it's a regular file or a directory (handle both)
+        if [[ -e "${filepath}" ]]; then
+            local target_path="${HOME}/${filename}"
+            # Use -sfv to force create symbolic links, verbose output
+            # Source must be absolute path for robustness
+            ln -sfv "${filepath}" "${target_path}"
         fi
     done
 }
