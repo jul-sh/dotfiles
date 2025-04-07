@@ -4,8 +4,8 @@ set -e
 setup_shell() {
     touch "${HOME}/.hushlogin"
 
-    for filename in dot_files/.*; do
-        if [[ -f "${filename}" && "${filename}" != "dot_files/.DS_Store" ]]; then
+    for filename in dotfiles/.*; do
+        if [[ -f "${filename}" && "${filename}" != "dotfiles/.DS_Store" ]]; then
             # Use -f to force overwriting existing files
             cp -fv "${filename}" "${HOME}/"
         fi
