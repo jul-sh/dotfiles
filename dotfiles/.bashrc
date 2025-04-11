@@ -15,3 +15,4 @@ if [[ "$-" =~ i && -x "${WHICH_ZSH}" && ! "${SHELL}" -ef "${WHICH_ZSH}" ]]; then
     # console and wants bash, so we skip this.
     exec env SHELL="${WHICH_ZSH}" "${WHICH_ZSH}" -i
 fi
+. "$HOME/.cargo/env"
