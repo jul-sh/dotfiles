@@ -99,10 +99,15 @@ install_packages() {
         echo "uv installation failed."
         return 1
     }
-
     echo "Installing Zellij CLI..."
     cargo install zellij || {
         echo "Zellij installation failed."
+        return 1
+    }
+
+    echo "Installing aichat..."
+    cargo install aichat || {
+        echo "aichat installation failed."
         return 1
     }
 
