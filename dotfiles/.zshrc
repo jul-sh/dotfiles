@@ -67,5 +67,9 @@ if [ -f "${HOME}/.dotfiles_update.sh" ]; then
   source "${HOME}/.dotfiles_update.sh"
 fi
 
+if [ -f "${HOME}/.utils.sh" ]; then
+  source "${HOME}/.utils.sh"
+fi
+
 # Initialize starship prompt
 eval "$(starship init zsh)"
