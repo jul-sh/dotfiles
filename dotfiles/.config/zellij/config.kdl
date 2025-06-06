@@ -169,8 +169,8 @@ keybinds {
     shared_except "locked" {
         bind "Ctrl g" { SwitchToMode "Locked"; }
         bind "Ctrl q" { Quit; }
-        unbind "Alt f" { ToggleFloatingPanes; } // Assuming this was a typo for Alt n or just an example, keep it if intentional
-        // bind "Alt n" { NewPane; } // CUSTOM: Removed old binding for Alt n (NewPane)
+        bind "Alt f" { ToggleFloatingPanes; }
+        bind "Alt n" { NewPane; }
         bind "Alt t" { NewTab; } // CUSTOM: Added binding for Alt t to create a new tab
         bind "Alt w" { CloseFocus; } // CUSTOM: Added binding for Alt w to close the current tab
         bind "Alt i" { MoveTab "Left"; }
