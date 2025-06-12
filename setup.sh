@@ -112,6 +112,12 @@ install_packages() {
         return 1
     }
 
+    echo "Installing shpool CLI..."
+    cargo install shpool || {
+        echo "shpool installation failed."
+        return 1
+    }
+
     echo "Installing aichat..."
     cargo install aichat || {
         echo "aichat installation failed."
