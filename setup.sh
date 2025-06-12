@@ -67,28 +67,50 @@ install_packages() {
         }
 
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo "Installing Wezterm..."
-        curl -fsSL https://apt.fury.io/wez/gpg.key | sudo gpg --yes --dearmor -o /etc/apt/keyrings/wezterm-fury.gpg
-        echo 'deb [signed-by=/etc/apt/keyrings/wezterm-fury.gpg] https://apt.fury.io/wez/ * *' | sudo tee /etc/apt/sources.list.d/wezterm.list
-        sudo apt update
-        sudo apt install wezterm
+      echo "Installing Wezterm..."
+      # Add GPG key
+      curl -fsSL https://apt.fury.io/wez/gpg.key | sudo gpg --yes --dearmor -o /etc/apt/keyrings/wezterm-fury.gpg || {
+          echo "Warning: Failed to add Wezterm GPG key. Wezterm installation may fail."
+      }
 
+      # Add repository
+      echo 'deb [signed-by=/etc/apt/keyrings/wezterm-fury.gpg] https://apt.fury.io/wez/ * *' | sudo tee /etc/apt/sources.list.d/wezterm.list > /dev/null || {
+          echo "Warning: Failed to add Wezterm repository. Wezterm installation may fail."
+      }
 
+      # Update apt cache
+      sudo apt update || {
+          echo "Warning: Failed to update apt cache after adding Wezterm repository. Wezterm installation may fail."
+      }
 
-        echo "Installing fzf..."
-        sudo apt install fzf
+      # Install Wezterm
+      sudo apt install wezterm || {
+          echo "Warning: Wezterm installation failed. Continuing with other packages."
+      }
 
-        echo "Installing zed..."
-        curl -f https://zed.dev/install.sh | sh
+      echo "Installing fzf..."
+      sudo apt install fzf || {
+          echo "Warning: fzf installation failed. Continuing."
+      }
 
-        (type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y)) \
-       	&& sudo mkdir -p -m 755 /etc/apt/keyrings \
-                        && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-                        && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-       	&& sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-       	&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-       	&& sudo apt update \
-       	&& sudo apt install gh -y
+      echo "Installing zed..."
+      curl -f https://zed.dev/install.sh | sh || {
+          echo "Warning: zed installation failed. Continuing."
+      }
+
+      echo "Installing GitHub CLI (gh)..."
+      (
+          type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y)
+      ) &&
+      sudo mkdir -p -m 755 /etc/apt/keyrings &&
+      out=$(mktemp) && wget -nv -O"$out" https://cli.github.com/packages/githubcli-archive-keyring.gpg &&
+      cat "$out" | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null &&
+      sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg &&
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null &&
+      sudo apt update &&
+      sudo apt install gh -y || {
+          echo "Warning: GitHub CLI (gh) installation failed. Continuing."
+      }
     else
         echo "Unsupported OS: $OSTYPE"
         return 1
