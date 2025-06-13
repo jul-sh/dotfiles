@@ -71,5 +71,37 @@ if [ -f "${HOME}/.utils.sh" ]; then
   source "${HOME}/.utils.sh"
 fi
 
+# Confirm quittting
+# Custom widget to confirm exit on Ctrl+D
+confirm-exit() {
+  # If the command buffer is empty...
+  if [[ -z "$BUFFER" ]]; then
+    # Ask for confirmation
+    # -q reads one character, ? is the prompt
+    read -q "choice?Are you sure you want to exit? [y/N] "
+
+    # Add a newline so the next prompt is clean
+    print -n "\n"
+
+    # If the user typed 'y' or 'Y', exit the shell
+    if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+      exit
+    else
+      # Otherwise, just redraw the prompt
+      zle redisplay
+    fi
+  else
+    # If the buffer is not empty, perform the default action
+    # for Ctrl+D, which is to delete a character.
+    zle delete-char
+  fi
+}
+
+# Create a new ZLE widget named 'confirm-exit'
+zle -N confirm-exit
+
+# Bind Ctrl+D to our new custom widget
+bindkey '^D' confirm-exit
+
 # Initialize starship prompt
 eval "$(starship init zsh)"
