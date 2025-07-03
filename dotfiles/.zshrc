@@ -54,13 +54,45 @@ else
   compinit -i -d ~/.zcompdump # Use existing dump file without checks
 fi
 
-load_plugin "https://github.com/Aloxaf/fzf-tab.git" "01dad759c4466600b639b442ca24aebd5178e799" "v1.2.0"
 load_plugin "https://github.com/zsh-users/zsh-syntax-highlighting.git" "db085e4661f6aafd24e5acb5b2e17e4dd5dddf3e" "0.8.0"
-load_plugin "https://github.com/zsh-users/zsh-autosuggestions.git" "e52ee8ca55bcc56a17c828767a3f98f22a68d4eb" "v0.7.1"
-ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd completion)
+
+load_plugin "https://github.com/marlonrichert/zsh-autocomplete.git" "8302f16393b9844b24365ba01fe47e18c102962c"
+bindkey '^I' menu-select
+bindkey -M menuselect '^I' menu-complete
+zstyle ':autocomplete:tab:*' widget-style menu-complete
+bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
+zstyle ':autocomplete:*' min-input 3
+# Esc to exit autocomplete menu
+bindkey -M menuselect '^[' undo
+# Restore default history binding, otherwise occupied by zsh autocomplete
+bindkey -M emacs \
+    "^[p"   .history-search-backward \
+    "^[n"   .history-search-forward \
+    "^P"    .up-line-or-history \
+    "^[OA"  .up-line-or-history \
+    "^[[A"  .up-line-or-history \
+    "^N"    .down-line-or-history \
+    "^[OB"  .down-line-or-history \
+    "^[[B"  .down-line-or-history \
+    "^R"    .history-incremental-search-backward \
+    "^S"    .history-incremental-search-forward \
+    #
+bindkey -a \
+    "^P"    .up-history \
+    "^N"    .down-history \
+    "k"     .up-line-or-history \
+    "^[OA"  .up-line-or-history \
+    "^[[A"  .up-line-or-history \
+    "j"     .down-line-or-history \
+    "^[OB"  .down-line-or-history \
+    "^[[B"  .down-line-or-history \
+    "/"     .vi-history-search-backward \
+    "?"     .vi-history-search-forward \
+    #
 
 export ZSH_FZF_HISTORY_SEARCH_BIND="^[[A"
 load_plugin "https://github.com/joshskidmore/zsh-fzf-history-search" "d5a9730b5b4cb0b39959f7f1044f9c52743832ba"
+
 
 # Check for dotfile updates
 if [ -f "${HOME}/.dotfiles_update.sh" ]; then
