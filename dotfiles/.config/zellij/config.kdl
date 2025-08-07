@@ -436,6 +436,6 @@ show_release_notes false
 show_startup_tips false
 
 // Attach to named session by default
-attach_to_session true
+// attach_to_session true
 // Named session
-session_name "main_session"
+// session_name "main_session"
