@@ -2,7 +2,7 @@
 	name = Juliette Pluto
 	email = git@jul.sh
 [core]
-  editor = code -n -w
+  editor = zed --new --wait
 	ignorecase = false
 [commit]
 	gpgsign = false
@@ -90,10 +90,10 @@
 [receive]
   fsckObjects = true
 [credential "https://github.com"]
-	helper = 
+	helper =
 	helper = !/opt/homebrew/bin/gh auth git-credential
 [credential "https://gist.github.com"]
-	helper = 
+	helper =
 	helper = !/opt/homebrew/bin/gh auth git-credential
 [credential]
 	helper = store

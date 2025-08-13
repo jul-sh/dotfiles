@@ -119,10 +119,14 @@ install_packages() {
     curl -LsSf https://astral.sh/uv/install.sh | sh
 
     echo "Installing Rust-based tools via cargo..."
-    local cargo_packages=("zellij" "atuin" "aichat")
+    local cargo_packages=("zellij" "aichat")
     for pkg in "${cargo_packages[@]}"; do
         cargo install "${pkg}"
     done
+
+    echo "Installing shell-based tools via curl..."
+    echo "Installing Atuin..."
+    curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
 
     echo "Package installation complete!"
 }

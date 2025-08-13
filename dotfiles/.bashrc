@@ -16,3 +16,8 @@ if [[ "$-" =~ i && -x "${WHICH_ZSH}" && ! "${SHELL}" -ef "${WHICH_ZSH}" ]]; then
     exec env SHELL="${WHICH_ZSH}" "${WHICH_ZSH}" -i
 fi
 . "$HOME/.cargo/env"
+
+. "$HOME/.atuin/bin/env"
+
+[[ -f ~/.bash-preexec.sh ]] && source ~/.bash-preexec.sh
+eval "$(atuin init bash)"

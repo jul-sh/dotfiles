@@ -48,3 +48,5 @@ za() {
   # Attach to the session if it exists, otherwise create it with the new name.
   zellij attach "$session_name" || zellij --session "$session_name"
 }
+
+. "$HOME/.atuin/bin/env"
