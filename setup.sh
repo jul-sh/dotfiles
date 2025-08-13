@@ -140,6 +140,12 @@ install_packages() {
         return 1
     }
 
+    echo "Installing atuin CLI..."
+    cargo install atuin || {
+        echo "atuin installation failed."
+        return 1
+    }
+
     echo "Installing aichat..."
     cargo install aichat || {
         echo "aichat installation failed."
