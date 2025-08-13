@@ -11,6 +11,36 @@ fi
 # Print a greeting message
 echo -e "\e[3mHi girl, you're doing great this $(date +"%A"). —ฅ/ᐠ. ̫.ᐟ\ฅ—\e[0m"
 
+
+# --------------------------------
+# ZSH History Configuration
+# --------------------------------
+
+# Define location and size
+export HISTFILE="${HOME}/.zsh_history"
+export HISTSIZE=50000  # Lines of history to keep in memory (per session)
+export SAVEHIST=50000  # Lines of history to keep in the file (shared)
+
+# The Magic Option: Share history across sessions in real-time.
+setopt SHARE_HISTORY
+
+# Save timestamp and duration. Crucial for chronological merging.
+setopt EXTENDED_HISTORY
+
+# History Hygiene:
+# Do not store commands starting with a space.
+setopt HIST_IGNORE_SPACE
+
+# If a command is already in the history, don't add it again (by removing the older entry).
+setopt HIST_IGNORE_ALL_DUPS
+
+# Remove superfluous blanks from commands.
+setopt HIST_REDUCE_BLANKS
+
+# --------------------------------
+# ZSH Other Configuration
+# --------------------------------
+
 # Show hidden files in completions
 setopt globdots
 
