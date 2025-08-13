@@ -60,8 +60,8 @@ install_packages() {
             return 1
         }
 
-        echo "Installing raycast, zed, and Visual Studio Code..."
-        /opt/homebrew/bin/brew install --cask --force raycast zed visual-studio-code || {
+        echo "Installing raycast and zed..."
+        /opt/homebrew/bin/brew install --cask --force raycast zed || {
             echo "macOS package installation failed."
             return 1
         }
@@ -131,12 +131,6 @@ install_packages() {
     echo "Installing Zellij CLI..."
     cargo install zellij || {
         echo "Zellij installation failed."
-        return 1
-    }
-
-    echo "Installing shpool CLI..."
-    cargo install shpool || {
-        echo "shpool installation failed."
         return 1
     }
 
