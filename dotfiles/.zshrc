@@ -34,7 +34,7 @@ load_plugin() {
     if [ -n "${plugin_branch}" ]; then
       git clone --depth 1 --branch "${plugin_branch}" "${plugin_repo}" "${plugin_dir}"
     else
-      git clone --depth 1 "${plugin_repo}" "${plugin_dir}"
+      git clone "${plugin_repo}" "${plugin_dir}"
       git -C "${plugin_dir}" checkout "${plugin_commit}"
     fi
 
