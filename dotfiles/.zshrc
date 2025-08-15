@@ -112,5 +112,3 @@ setopt ignoreeof
 
 # Initialize starship prompt
 eval "$(starship init zsh)"
-
-. "$HOME/.atuin/bin/env"

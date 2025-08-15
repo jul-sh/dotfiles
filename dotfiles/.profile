@@ -49,4 +49,7 @@ za() {
   zellij attach "$session_name" || zellij --session "$session_name"
 }
 
-. "$HOME/.atuin/bin/env"
+
+if [ -f "$HOME/.atuin/bin/env" ]; then
+  . "$HOME/.atuin/bin/env"
+fi
