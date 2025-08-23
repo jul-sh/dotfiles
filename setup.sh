@@ -33,7 +33,6 @@ _handle_error() {
 trap '_handle_error' ERR
 
 # --- Setup Functions ---
-
 setup_shell() {
     echo "--- Setting up shell and symlinking dotfiles ---"
     touch "${HOME}/.hushlogin"
@@ -47,17 +46,39 @@ setup_shell() {
     fi
 
     echo "Symlinking dotfiles from ${dotfiles_dir} to ${HOME}"
-    for filepath in "${dotfiles_dir}"/.*; do
-        local filename
-        filename=$(basename "${filepath}")
 
-        # Skip ., .., and .DS_Store
-        case "$filename" in
-            .|..|.DS_Store)
-                continue
-                ;;
-        esac
-        ln -sfv "${filepath}" "${HOME}/${filename}"
+    # Use find to iterate over all files and directories within dotfiles_dir, recursively.
+    # -mindepth 1: Exclude the dotfiles_dir itself from the results.
+    # -print0: Null-terminate output for safe handling of filenames with spaces or special characters.
+    find "${dotfiles_dir}" -mindepth 1 -print0 | while IFS= read -r -d $'\0' src_path; do
+        # Extract the relative path from dotfiles_dir (e.g., .config/nvim/init.vim)
+        local relative_path="${src_path#${dotfiles_dir}/}"
+
+        # Construct the full destination path in HOME (e.g., ~/.config/nvim/init.vim)
+        local dest_path="${HOME}/${relative_path}"
+
+        local filename
+        filename=$(basename "${src_path}")
+
+        # Skip .DS_Store files which are macOS-specific metadata files
+        if [[ "$filename" == ".DS_Store" ]]; then
+            continue
+        fi
+
+        if [[ -d "$src_path" ]]; then
+            # If the source is a directory, ensure the corresponding directory exists in HOME.
+            # mkdir -p will create parent directories as needed and won't fail if the directory already exists.
+            echo "Creating directory: ${dest_path}"
+            mkdir -p "${dest_path}"
+        elif [[ -f "$src_path" ]]; then
+            # If the source is a regular file, ensure its parent directory exists in HOME,
+            # then create a symbolic link from the source file to the destination path.
+            # The -f flag will remove an existing destination file or symlink if it exists,
+            # and -v provides verbose output.
+            echo "Symlinking: ${src_path} -> ${dest_path}"
+            mkdir -p "$(dirname "${dest_path}")"
+            ln -sfv "${src_path}" "${dest_path}"
+        fi
     done
 }
 
