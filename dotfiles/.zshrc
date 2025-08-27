@@ -66,6 +66,8 @@ bindkey -M menuselect '^I' menu-complete
 zstyle ':autocomplete:tab:*' widget-style menu-complete
 bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
 zstyle ':autocomplete:*' min-input 3
+# Don't prompt for confirmation if there's many completions to show
+zstyle ':completion:*' menu yes select
 # Esc to exit autocomplete menu
 bindkey -M menuselect '^[' undo
 # Restore default history binding, otherwise occupied by zsh autocomplete
