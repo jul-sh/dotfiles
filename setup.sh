@@ -163,6 +163,12 @@ configure_os() {
         sudo cp ./macos/com.capslock_to_backspace.plist /Library/LaunchDaemons/
         sudo launchctl load -w /Library/LaunchDaemons/com.capslock_to_backspace.plist
 
+        # Configure sleep on lid close
+        sudo cp ./macos/sleep_on_lid_close.sh /Library/Scripts/
+        sudo chmod +x /Library/Scripts/sleep_on_lid_close.sh
+        sudo cp ./macos/com.julsh.sleeponlidclose.plist /Library/LaunchDaemons/
+        sudo launchctl load -w /Library/LaunchDaemons/com.julsh.sleeponlidclose.plist
+
         # Finder & General UI
         defaults write com.apple.screencapture location -string "${HOME}/Desktop"
         defaults write com.apple.TextEdit NSShowAppCentricOpenPanelInsteadOfUntitledFile -bool false

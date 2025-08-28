@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<!-- Unique identifier for this launchd job -->
+		<key>Label</key>
+		<string>com.julsh.sleeponlidclose</string>
+		<!-- Path to the script that will be executed -->
+		<key>ProgramArguments</key>
+		<array>
+			<string>/Library/Scripts/sleep_on_lid_close.sh</string>
+		</array>
+		<!-- Run the script when the system loads -->
+		<key>RunAtLoad</key>
+		<true/>
+		<!-- Run the script every X seconds -->
+		<key>StartInterval</key>
+		<integer>5</integer>
+	</dict>
+</plist>
