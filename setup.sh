@@ -107,20 +107,20 @@ install_packages() {
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo "Linux detected. Installing packages with apt..."
 
-        curl -fsSL https://apt.fury.io/wez/gpg.key | sudo gpg --yes --dearmor -o /etc/apt/keyrings/wezterm-fury.gpg && \
-        echo 'deb [signed-by=/etc/apt/keyrings/wezterm-fury.gpg] https://apt.fury.io/wez/ * *' | sudo tee /etc/apt/sources.list.d/wezterm.list > /dev/null && \
-        sudo apt update && \
-        sudo apt install -y wezterm
-
         curl -f https://zed.dev/install.sh | sh
 
-        type -p wget >/dev/null || (sudo apt-get update && sudo apt-get install -y wget) && \
-        sudo mkdir -p -m 755 /etc/apt/keyrings && \
-        wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && \
-        sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && \
-        echo 'deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main' | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
-        sudo apt update && \
-        sudo apt install -y gh
+        # curl -fsSL https://apt.fury.io/wez/gpg.key | sudo gpg --yes --dearmor -o /etc/apt/keyrings/wezterm-fury.gpg && \
+        # echo 'deb [signed-by=/etc/apt/keyrings/wezterm-fury.gpg] https://apt.fury.io/wez/ * *' | sudo tee /etc/apt/sources.list.d/wezterm.list > /dev/null && \
+        # sudo apt update && \
+        # sudo apt install -y wezterm
+
+        # type -p wget >/dev/null || (sudo apt-get update && sudo apt-get install -y wget) && \
+        # sudo mkdir -p -m 755 /etc/apt/keyrings && \
+        # wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && \
+        # sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && \
+        # echo 'deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main' | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
+        # sudo apt update && \
+        # sudo apt install -y gh
     else
         echo "Unsupported OS: $OSTYPE. Skipping OS-specific package installation." >&2
     fi
