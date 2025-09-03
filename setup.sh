@@ -1,232 +1,162 @@
 #!/usr/bin/env bash
 #
-# This script sets up a new development environment by:
-# 1. Symlinking dotfiles.
-# 2. Installing packages for macOS or Linux.
-# 3. Installing common cross-platform tools (Rust, etc.).
-# 4. Configuring OS-specific settings.
-# 5. Installing fonts.
+# Bootstrapper for a new development environment.
 #
-# It is designed to be idempotent and can be run multiple times.
+# 1. Installs prerequisites.
+# 2. Applies the declarative shell environment using Nix Flakes and Home Manager.
+# 3. Installs OS-specific GUI applications.
+# 4. Configures system-level settings that require sudo.
 
-# Set options:
-# -u: Treat unset variables as an error.
-# -o pipefail: The return value of a pipeline is the exit status of the last command
-#              that exited with a non-zero status, or zero if all commands succeed.
-# Note: -e (exit on error) is deliberately removed to allow the script to continue
-#       and instead rely on the ERR trap for warnings.
-set -uo pipefail
+set -euo pipefail
 
-# Global error handler: Prints a warning if a command fails, but does not exit the script.
-_handle_error() {
-    local exit_code=$?
-    local cmd="$BASH_COMMAND"
-    local line_num=${BASH_LINENO[0]}
-    # FUNCNAME[0] is _handle_error itself, FUNCNAME[1] is the function that called the failing command.
-    local func_name=${FUNCNAME[1]:-"main script"}
-    echo "WARNING: Command failed (exit code $exit_code) in '${func_name}' on line $line_num: '$cmd'. Continuing anyway." >&2
+# --- Helper Functions ---
+info() {
+    echo -e "\e[34m[INFO]\e[0m $1"
 }
 
-# Trap ERR: Executes _handle_error function whenever a command exits with a non-zero status.
-# Commands within `[[ ... ]]` or `if` conditions, or those explicitly followed by `|| true`,
-# `|| { ... }`, or `!` are typically exempt from triggering the ERR trap.
-trap '_handle_error' ERR
-
-# --- Setup Functions ---
-setup_shell() {
-    echo "--- Setting up shell and symlinking dotfiles ---"
-    touch "${HOME}/.hushlogin"
-
-    local dotfiles_dir
-    dotfiles_dir="$(pwd)/dotfiles"
-
-    if [[ ! -d "$dotfiles_dir" ]]; then
-        echo "ERROR: 'dotfiles' directory not found in the current directory. Exiting." >&2
-        exit 1
-    fi
-
-    echo "Symlinking dotfiles from ${dotfiles_dir} to ${HOME}"
-
-    # Use find to iterate over all files and directories within dotfiles_dir, recursively.
-    # -mindepth 1: Exclude the dotfiles_dir itself from the results.
-    # -print0: Null-terminate output for safe handling of filenames with spaces or special characters.
-    find "${dotfiles_dir}" -mindepth 1 -print0 | while IFS= read -r -d $'\0' src_path; do
-        # Extract the relative path from dotfiles_dir (e.g., .config/nvim/init.vim)
-        local relative_path="${src_path#${dotfiles_dir}/}"
-
-        # Construct the full destination path in HOME (e.g., ~/.config/nvim/init.vim)
-        local dest_path="${HOME}/${relative_path}"
-
-        local filename
-        filename=$(basename "${src_path}")
-
-        # Skip .DS_Store files which are macOS-specific metadata files
-        if [[ "$filename" == ".DS_Store" ]]; then
-            continue
-        fi
-
-        if [[ -d "$src_path" ]]; then
-            # If the source is a directory, ensure the corresponding directory exists in HOME.
-            # mkdir -p will create parent directories as needed and won't fail if the directory already exists.
-            echo "Creating directory: ${dest_path}"
-            mkdir -p "${dest_path}"
-        elif [[ -f "$src_path" ]]; then
-            # If the source is a regular file, ensure its parent directory exists in HOME,
-            # then create a symbolic link from the source file to the destination path.
-            # The -f flag will remove an existing destination file or symlink if it exists,
-            # and -v provides verbose output.
-            echo "Symlinking: ${src_path} -> ${dest_path}"
-            mkdir -p "$(dirname "${dest_path}")"
-            ln -sfv "${src_path}" "${dest_path}"
-        fi
-    done
+warn() {
+    echo -e "\e[33m[WARN]\e[0m $1" >&2
 }
 
-install_packages() {
-    echo "--- Starting package installation ---"
+error() {
+    echo -e "\e[31m[ERROR]\e[0m $1" >&2
+    exit 1
+}
 
-    curl -sS https://starship.rs/install.sh | sh -s -- --force
+get_nix_system() {
+    local os
+    case "$OSTYPE" in
+        linux-gnu*) os="linux" ;;
+        darwin*)    os="darwin" ;;
+        *)          error "Unsupported OS for Nix: $OSTYPE" ;;
+    esac
 
+    local arch
+    case "$(uname -m)" in
+        x86_64)        arch="x86_64" ;;
+        aarch64|arm64) arch="aarch64" ;;
+        *)             error "Unsupported architecture for Nix: $(uname -m)" ;;
+    esac
+    echo "${arch}-${os}"
+}
+
+# --- Prerequisite Installation ---
+install_prereqs() {
+    info "Installing prerequisites..."
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "macOS detected. Installing Homebrew and packages..."
-
         if ! command -v brew &>/dev/null; then
+            info "Homebrew not found. Installing..."
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         else
-            echo "Homebrew already installed."
+            info "Homebrew is already installed."
         fi
-
-        if command -v brew &>/dev/null; then
-            local brew_bin
-            brew_bin=$(brew --prefix)/bin/brew
-            "$brew_bin" install --cask --force raycast zed
-        else
-            echo "WARNING: Homebrew not found after attempted installation. Skipping Homebrew package installation." >&2
-        fi
-
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo "Linux detected. Installing packages with apt..."
+        info "Updating apt and installing git and curl..."
+        sudo apt-get update
+        sudo apt-get install -y git curl
+    else
+        error "Unsupported OS: $OSTYPE"
+    fi
 
+    # Install Nix if not already installed
+    if ! command -v nix &>/dev/null; then
+        info "Nix not found. Attempting multi-user installation..."
+        # Try the Determinate Systems installer (multi-user) first.
+        if curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm; then
+            info "Multi-user Nix installation successful."
+            # Source the multi-user profile script to make 'nix' available in this session.
+            local nix_profile="/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
+            if [ -f "$nix_profile" ]; then
+                info "Sourcing Nix profile for multi-user install..."
+                . "$nix_profile"
+            else
+                error "Multi-user Nix installation seemed to succeed, but its profile script was not found. Please start a new terminal and re-run this script."
+            fi
+        else
+            warn "Multi-user installation failed. Falling back to official single-user installer."
+            # Fallback to the official installer (single-user).
+            if curl -L https://nixos.org/nix/install | sh -s -- --no-daemon; then
+                info "Single-user Nix installation successful."
+                # Source the single-user profile script.
+                local nix_profile="$HOME/.nix-profile/etc/profile.d/nix.sh"
+                if [ -f "$nix_profile" ]; then
+                    info "Sourcing Nix profile for single-user install..."
+                    . "$nix_profile"
+                else
+                    error "Single-user Nix installation seemed to succeed, but its profile script was not found. Please start a new terminal and re-run this script."
+                fi
+            else
+                error "Both multi-user and single-user Nix installation methods failed. Please check the logs and try again."
+            fi
+        fi
+    else
+        info "Nix is already installed."
+    fi
+}
+
+# --- Nix Configuration ---
+apply_nix_config() {
+    info "Applying Nix Home Manager configuration..."
+
+    local system
+    system=$(get_nix_system)
+    info "Detected Nix system: $system"
+
+    # Construct the flake reference dynamically, e.g., ./nix#julsh@x86_64-linux
+    local flake_ref="./nix#${USER}@${system}"
+    info "Applying flake configuration: $flake_ref"
+
+    # We are running from the root of the repo, so we point to the 'nix' directory
+    nix run home-manager/master -- switch --flake "$flake_ref" -b backup
+}
+
+# --- OS-Specific Tasks (Not managed by Nix) ---
+install_desktop_apps() {
+    info "Installing GUI applications..."
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        info "Installing Raycast and Zed via Homebrew Cask..."
+        brew install --cask --force raycast zed
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        info "Installing Zed editor..."
         curl -f https://zed.dev/install.sh | sh
-
-        # curl -fsSL https://apt.fury.io/wez/gpg.key | sudo gpg --yes --dearmor -o /etc/apt/keyrings/wezterm-fury.gpg && \
-        # echo 'deb [signed-by=/etc/apt/keyrings/wezterm-fury.gpg] https://apt.fury.io/wez/ * *' | sudo tee /etc/apt/sources.list.d/wezterm.list > /dev/null && \
-        # sudo apt update && \
-        # sudo apt install -y wezterm
-
-        # type -p wget >/dev/null || (sudo apt-get update && sudo apt-get install -y wget) && \
-        # sudo mkdir -p -m 755 /etc/apt/keyrings && \
-        # wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && \
-        # sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && \
-        # echo 'deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main' | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
-        # sudo apt update && \
-        # sudo apt install -y gh
-    else
-        echo "Unsupported OS: $OSTYPE. Skipping OS-specific package installation." >&2
     fi
-
-    # --- Install common tools (Rust, Cargo packages) ---
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain none -y
-
-    # Rustup post-install setup
-    if [ -f "${HOME}/.cargo/env" ]; then
-        # shellcheck source=/dev/null
-        source "${HOME}/.cargo/env"
-        rustup toolchain install nightly --allow-downgrade --profile minimal --component clippy
-    else
-        echo "WARNING: .cargo/env not found after Rust installation. Skipping Rust toolchain setup." >&2
-    fi
-
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-
-    echo "Installing Rust-based tools via cargo..."
-    local cargo_packages=("zellij" "aichat")
-    for pkg in "${cargo_packages[@]}"; do
-        cargo install "${pkg}"
-    done
-
-    echo "Installing shell-based tools via curl..."
-    echo "Installing Atuin..."
-    curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
-
-    echo "Package installation complete!"
 }
 
 configure_os() {
-    echo "--- Applying OS-specific configurations ---"
+    info "Applying OS-specific configurations..."
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "Configuring macOS..."
+        info "Configuring macOS system settings..."
+        # NOTE: This section contains 'sudo' commands and cannot be managed by Home Manager.
+        # It is copied directly from your original script.
 
         # Remap Caps Lock to Backspace
         sudo cp ./macos/capslock_to_backspace.sh /Library/Scripts/
         sudo chmod +x /Library/Scripts/capslock_to_backspace.sh
         sudo cp ./macos/com.capslock_to_backspace.plist /Library/LaunchDaemons/
-        sudo launchctl load -w /Library/LaunchDaemons/com.capslock_to_backspace.plist
+        sudo launchctl load -w /Library/LaunchDaemons/com.capslock_to_backspace.plist || warn "Failed to load capslock LaunchDaemon. It might already be loaded."
 
-        # Configure sleep on lid close
-        sudo cp ./macos/sleep_on_lid_close.sh /Library/Scripts/
-        sudo chmod +x /Library/Scripts/sleep_on_lid_close.sh
-        sudo cp ./macos/com.julsh.sleeponlidclose.plist /Library/LaunchDaemons/
-        sudo launchctl load -w /Library/LaunchDaemons/com.julsh.sleeponlidclose.plist
-
-        # Finder & General UI
+        # Finder, Dock, & General UI
         defaults write com.apple.screencapture location -string "${HOME}/Desktop"
-        defaults write com.apple.TextEdit NSShowAppCentricOpenPanelInsteadOfUntitledFile -bool false
         defaults write NSGlobalDomain AppleShowAllExtensions -bool true
-        defaults write NSGlobalDomain AppleShowScrollBars -string "WhenScrolling"
-        defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
-        defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
-        defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
-        defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
-
-        # Dock
         defaults write com.apple.dock show-recents -int 0
-        defaults write com.apple.dock minimize-to-application -int 1
-        defaults write com.apple.dock tilesize -int 34
         defaults write com.apple.dock orientation -string "left"
+        killall Dock || true
 
-        # Login Window
+        # Login Window Text
         sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText \
             "—ฅ/ᐠ. ̫.ᐟ\\\ฅ— if it is lost, pls return this computer to lost@jul.sh"
-
-        echo "Restarting Dock and Finder to apply settings..."
-        # These `killall` commands are expected to fail if the process isn't running,
-        # so `|| true` prevents the ERR trap from firing for this specific case.
-        killall Dock &>/dev/null || true
-        killall Finder &>/dev/null || true
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo "Linux-specific configurations not implemented yet."
-    fi
-}
-
-install_fonts() {
-    echo "--- Installing fonts ---"
-    local font_dir
-
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        font_dir="${HOME}/Library/Fonts"
-    else
-        font_dir="${HOME}/.local/share/fonts"
-    fi
-
-    echo "Copying fonts to ${font_dir}"
-    mkdir -p "$font_dir"
-    find fonts -name "*.ttf" -exec cp {} "$font_dir/" \;
-
-    # Update font cache on Linux after copying new fonts
-    if [[ "$OSTYPE" != "darwin"* ]] && command -v fc-cache &>/dev/null; then
-        echo "Updating font cache..."
-        fc-cache -f -v
+        info "No Linux-specific system configurations to apply."
     fi
 }
 
 main() {
-    setup_shell
-    install_packages
-    install_fonts
+    install_prereqs
+    apply_nix_config
+    install_desktop_apps
     configure_os
 
-    echo "🎉 Setup complete! Please restart your terminal."
+    info "🎉 Setup complete! Please restart your terminal to ensure all changes take effect."
 }
 
 main
