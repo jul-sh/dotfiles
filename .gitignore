@@ -1,3 +1,6 @@
 .DS_Store
 .aider*
 .env
+dotfiles/.bashrc
+dotfiles/.profile
+dotfiles/.zshrc

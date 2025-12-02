@@ -71,6 +71,11 @@ setup_shell() {
             echo "Creating directory: ${dest_path}"
             mkdir -p "${dest_path}"
         elif [[ -f "$src_path" ]]; then
+            # Skip .bashrc.shared, .profile.shared, and .zshrc.shared as they will be handled separately below
+            if [[ "$filename" == ".bashrc.shared" || "$filename" == ".profile.shared" || "$filename" == ".zshrc.shared" ]]; then
+                continue
+            fi
+
             # If the source is a regular file, ensure its parent directory exists in HOME,
             # then create a symbolic link from the source file to the destination path.
             # The -f flag will remove an existing destination file or symlink if it exists,
@@ -80,6 +85,84 @@ setup_shell() {
             ln -sfv "${src_path}" "${dest_path}"
         fi
     done
+
+    # Create local shell configuration files that source the shared configurations
+    # These files should not be tracked in git, allowing machine-specific modifications
+
+    # Setup .profile
+    local profile_path="${HOME}/.profile"
+    local profile_shared_path="${dotfiles_dir}/.profile.shared"
+
+    if [[ ! -f "$profile_path" ]]; then
+        echo "Creating local .profile that sources .profile.shared"
+        cat > "${profile_path}" <<'EOF'
+# Source shared profile configuration
+if [ -f "${HOME}/.profile.shared" ]; then
+  . "${HOME}/.profile.shared"
+fi
+
+# Machine-specific configuration below this line
+# Software installations will typically add their PATH exports here
+
+EOF
+        echo "Created: ${profile_path}"
+    else
+        echo "Local .profile already exists, skipping creation"
+    fi
+
+    # Symlink .profile.shared after creating the local .profile
+    echo "Symlinking: ${profile_shared_path} -> ${HOME}/.profile.shared"
+    ln -sfv "${profile_shared_path}" "${HOME}/.profile.shared"
+
+    # Setup .bashrc
+    local bashrc_path="${HOME}/.bashrc"
+    local bashrc_shared_path="${dotfiles_dir}/.bashrc.shared"
+
+    if [[ ! -f "$bashrc_path" ]]; then
+        echo "Creating local .bashrc that sources .bashrc.shared"
+        cat > "${bashrc_path}" <<'EOF'
+# Source shared bash configuration
+if [ -f "${HOME}/.bashrc.shared" ]; then
+  . "${HOME}/.bashrc.shared"
+fi
+
+# Machine-specific configuration below this line
+# Software installations will typically add their PATH exports here
+
+EOF
+        echo "Created: ${bashrc_path}"
+    else
+        echo "Local .bashrc already exists, skipping creation"
+    fi
+
+    # Symlink .bashrc.shared after creating the local .bashrc
+    echo "Symlinking: ${bashrc_shared_path} -> ${HOME}/.bashrc.shared"
+    ln -sfv "${bashrc_shared_path}" "${HOME}/.bashrc.shared"
+
+    # Setup .zshrc
+    local zshrc_path="${HOME}/.zshrc"
+    local zshrc_shared_path="${dotfiles_dir}/.zshrc.shared"
+
+    if [[ ! -f "$zshrc_path" ]]; then
+        echo "Creating local .zshrc that sources .zshrc.shared"
+        cat > "${zshrc_path}" <<'EOF'
+# Source shared zsh configuration
+if [ -f "${HOME}/.zshrc.shared" ]; then
+  source "${HOME}/.zshrc.shared"
+fi
+
+# Machine-specific configuration below this line
+# Software installations will typically add their PATH exports here
+
+EOF
+        echo "Created: ${zshrc_path}"
+    else
+        echo "Local .zshrc already exists, skipping creation"
+    fi
+
+    # Symlink .zshrc.shared after creating the local .zshrc
+    echo "Symlinking: ${zshrc_shared_path} -> ${HOME}/.zshrc.shared"
+    ln -sfv "${zshrc_shared_path}" "${HOME}/.zshrc.shared"
 }
 
 install_packages() {
