@@ -1,4 +1,9 @@
 alias ai='aichat -e'
+
+# Add cargo-installed binaries to PATH
+# Even though rustup is managed by Nix, user can still `cargo install` global crates
+export PATH="$HOME/.cargo/bin:$PATH"
+
 export PATH="/usr/local/bin:$PATH"
 
 if command -v python3 &> /dev/null; then
