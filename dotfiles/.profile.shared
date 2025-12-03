@@ -1,8 +1,19 @@
 alias ai='aichat -e'
 
-# Add cargo-installed binaries to PATH
-# Even though rustup is managed by Nix, user can still `cargo install` global crates
+# Add user-level package manager binaries to PATH
+# These directories allow installing tools without sudo/Nix for quick iteration
+
+# Cargo: cargo install <crate>
 export PATH="$HOME/.cargo/bin:$PATH"
+
+# UV: uv tool install <package> (Python tools)
+export PATH="$HOME/.local/bin:$PATH"
+
+# Go: go install <package>
+export PATH="$HOME/go/bin:$PATH"
+
+# NPM: npm install -g <package> (when configured with prefix=~/.npm-global)
+export PATH="$HOME/.npm-global/bin:$PATH"
 
 export PATH="/usr/local/bin:$PATH"
 
