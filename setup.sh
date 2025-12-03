@@ -59,61 +59,59 @@ ensure_local_host_flake() {
 EOF
 }
 
+# Source Nix profile to make 'nix' available in current session
+source_nix_profile() {
+    local profile
+    for profile in \
+        "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" \
+        "$HOME/.nix-profile/etc/profile.d/nix.sh"; do
+        if [[ -f "$profile" ]]; then
+            info "Sourcing Nix profile..."
+            . "$profile"
+            return 0
+        fi
+    done
+    error "Nix profile not found. Please restart your terminal and re-run."
+}
+
+install_nix() {
+    info "Installing Nix..."
+    # Try Determinate Systems installer first (multi-user), fall back to official
+    if curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm; then
+        info "Nix installed (multi-user)."
+    elif curl -L https://nixos.org/nix/install | sh -s -- --no-daemon; then
+        info "Nix installed (single-user)."
+    else
+        error "Nix installation failed."
+    fi
+    source_nix_profile
+}
+
 # --- Prerequisite Installation ---
 install_prereqs() {
-    info "Installing prerequisites..."
+    # macOS: ensure Homebrew
     if [[ "$OSTYPE" == "darwin"* ]]; then
         if ! command -v brew &>/dev/null; then
-            info "Homebrew not found. Installing..."
+            info "Installing Homebrew..."
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        else
-            info "Homebrew is already installed."
         fi
+    # Linux: ensure git and curl
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        if command -v apt-get &>/dev/null; then
-            info "Updating apt and installing git and curl..."
-            sudo apt-get update
-            sudo apt-get install -y git curl
-        else
-            warn "apt-get not found, skipping system package installation (not Debian-based?)"
+        if ! command -v git &>/dev/null || ! command -v curl &>/dev/null; then
+            if command -v apt-get &>/dev/null; then
+                info "Installing git and curl via apt..."
+                sudo apt-get update && sudo apt-get install -y git curl
+            else
+                warn "apt-get not found, skipping (not Debian-based?)"
+            fi
         fi
     else
         error "Unsupported OS: $OSTYPE"
     fi
 
-    # Install Nix if not already installed
+    # All platforms: ensure Nix
     if ! command -v nix &>/dev/null; then
-        info "Nix not found. Attempting multi-user installation..."
-        # Try the Determinate Systems installer (multi-user) first.
-        if curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm; then
-            info "Multi-user Nix installation successful."
-            # Source the multi-user profile script to make 'nix' available in this session.
-            local nix_profile="/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
-            if [ -f "$nix_profile" ]; then
-                info "Sourcing Nix profile for multi-user install..."
-                . "$nix_profile"
-            else
-                error "Multi-user Nix installation seemed to succeed, but its profile script was not found. Please start a new terminal and re-run this script."
-            fi
-        else
-            warn "Multi-user installation failed. Falling back to official single-user installer."
-            # Fallback to the official installer (single-user).
-            if curl -L https://nixos.org/nix/install | sh -s -- --no-daemon; then
-                info "Single-user Nix installation successful."
-                # Source the single-user profile script.
-                local nix_profile="$HOME/.nix-profile/etc/profile.d/nix.sh"
-                if [ -f "$nix_profile" ]; then
-                    info "Sourcing Nix profile for single-user install..."
-                    . "$nix_profile"
-                else
-                    error "Single-user Nix installation seemed to succeed, but its profile script was not found. Please start a new terminal and re-run this script."
-                fi
-            else
-                error "Both multi-user and single-user Nix installation methods failed. Please check the logs and try again."
-            fi
-        fi
-    else
-        info "Nix is already installed."
+        install_nix
     fi
 }
 
@@ -186,33 +184,43 @@ EOF
     done
 }
 
+# Helper to install a macOS LaunchDaemon only if changed
+install_launchdaemon() {
+    local script_src="$1" script_dst="$2" plist_src="$3" plist_dst="$4"
+
+    # Skip if both files are identical to installed versions
+    if cmp -s "$script_src" "$script_dst" && cmp -s "$plist_src" "$plist_dst"; then
+        info "$(basename "$plist_src") already installed, skipping"
+        return 0
+    fi
+
+    info "Installing $(basename "$plist_src")..."
+    sudo cp "$script_src" "$script_dst"
+    sudo chmod +x "$script_dst"
+    sudo cp "$plist_src" "$plist_dst"
+    sudo launchctl load -w "$plist_dst" 2>/dev/null || true
+}
+
 configure_os() {
     info "Applying OS-specific configurations..."
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        info "Configuring macOS system settings..."
-        # NOTE: This section contains 'sudo' commands and cannot be managed by Home Manager.
-        # It is copied directly from your original script.
+        # LaunchDaemons (requires sudo, can't be managed by Home Manager)
+        install_launchdaemon \
+            ./macos/capslock_to_backspace.sh /Library/Scripts/capslock_to_backspace.sh \
+            ./macos/com.capslock_to_backspace.plist /Library/LaunchDaemons/com.capslock_to_backspace.plist
 
-        # Remap Caps Lock to Backspace
-        sudo cp ./macos/capslock_to_backspace.sh /Library/Scripts/
-        sudo chmod +x /Library/Scripts/capslock_to_backspace.sh
-        sudo cp ./macos/com.capslock_to_backspace.plist /Library/LaunchDaemons/
-        sudo launchctl load -w /Library/LaunchDaemons/com.capslock_to_backspace.plist || warn "Failed to load capslock LaunchDaemon. It might already be loaded."
+        install_launchdaemon \
+            ./macos/sleep_on_lid_close.sh /Library/Scripts/sleep_on_lid_close.sh \
+            ./macos/com.julsh.sleeponlidclose.plist /Library/LaunchDaemons/com.julsh.sleeponlidclose.plist
 
-        # Configure sleep on lid close
-        sudo cp ./macos/sleep_on_lid_close.sh /Library/Scripts/
-        sudo chmod +x /Library/Scripts/sleep_on_lid_close.sh
-        sudo cp ./macos/com.julsh.sleeponlidclose.plist /Library/LaunchDaemons/
-        sudo launchctl load -w /Library/LaunchDaemons/com.julsh.sleeponlidclose.plist || warn "Failed to load sleep on lid close LaunchDaemon. It might already be loaded."
-
-        # Finder, Dock, & General UI
+        # Finder, Dock, & General UI (these are already idempotent)
         defaults write com.apple.screencapture location -string "${HOME}/Desktop"
         defaults write NSGlobalDomain AppleShowAllExtensions -bool true
         defaults write com.apple.dock show-recents -int 0
         defaults write com.apple.dock minimize-to-application -int 1
         defaults write com.apple.dock tilesize -int 34
         defaults write com.apple.dock orientation -string "left"
-        killall Dock || true
+        killall Dock 2>/dev/null || true
 
         # Login Window Text
         sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText \
