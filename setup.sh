@@ -9,6 +9,10 @@
 
 set -euo pipefail
 
+# Resolve the directory containing this script (works even if called via symlink)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 # --- Helper Functions ---
 info() {
     echo -e "\e[34m[INFO]\e[0m $1"
@@ -38,6 +42,21 @@ get_nix_system() {
         *)             error "Unsupported architecture for Nix: $(uname -m)" ;;
     esac
     echo "${arch}-${os}"
+}
+
+# Generate a local host flake that sets home directory to the detected $HOME
+ensure_local_host_flake() {
+    local target="nix/hosts/local/flake.nix"
+    mkdir -p "$(dirname "$target")"
+    cat > "$target" <<EOF
+{
+  outputs = { ... }: {
+    homeModules.default = { lib, ... }: {
+      home.homeDirectory = lib.mkForce "$HOME";
+    };
+  };
+}
+EOF
 }
 
 # --- Prerequisite Installation ---
@@ -102,12 +121,17 @@ apply_nix_config() {
     system=$(get_nix_system)
     info "Detected Nix system: $system"
 
+    # Generate local host flake with detected HOME path
+    ensure_local_host_flake
+    info "Using detected HOME: $HOME"
+
     # Construct the flake reference dynamically, e.g., ./nix#julsh@x86_64-linux
     local flake_ref="./nix#${USER}@${system}"
     info "Applying flake configuration: $flake_ref"
 
-    # We are running from the root of the repo, so we point to the 'nix' directory
-    nix run home-manager/master -- switch --flake "$flake_ref" -b backup
+    # Override host input to use generated local flake (gitignored, can't be in lock file)
+    nix run home-manager/master -- switch --flake "$flake_ref" -b backup \
+        --override-input host "path:./nix/hosts/local"
 }
 
 # --- OS-Specific Tasks (Not managed by Nix) ---
@@ -117,64 +141,45 @@ install_desktop_apps() {
         info "Installing Raycast and Zed via Homebrew Cask..."
         brew install --cask --force raycast zed
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        info "Installing Zed editor..."
-        curl -f https://zed.dev/install.sh | sh
+        if command -v zed &>/dev/null; then
+            info "Zed is already installed."
+        else
+            info "Installing Zed editor..."
+            curl -f https://zed.dev/install.sh | sh
+        fi
     fi
 }
 
 setup_local_rc_files() {
     info "Setting up local shell rc files..."
 
-    # Create local .profile that sources .profile.shared
-    if [[ ! -f "${HOME}/.profile" ]]; then
-        info "Creating local .profile..."
-        cat > "${HOME}/.profile" <<'EOF'
-# Source shared profile configuration
-if [ -f "${HOME}/.profile.shared" ]; then
-  . "${HOME}/.profile.shared"
+    # Each rc file sources its .shared counterpart managed by Home Manager
+    local -A rc_files=(
+        [".profile"]=".profile.shared"
+        [".bashrc"]=".bashrc.shared"
+        [".zshrc"]=".zshrc.shared"
+    )
+
+    for rc in "${!rc_files[@]}"; do
+        local shared="${rc_files[$rc]}"
+        local target="${HOME}/${rc}"
+
+        if [[ -f "$target" ]]; then
+            info "Local $rc already exists, skipping"
+            continue
+        fi
+
+        info "Creating local $rc..."
+        cat > "$target" <<EOF
+# Source shared configuration (managed by Nix Home Manager)
+if [ -f "\${HOME}/${shared}" ]; then
+  . "\${HOME}/${shared}"
 fi
 
 # Machine-specific configuration below this line
-# Software installations will typically add their PATH exports here
 
 EOF
-    else
-        info "Local .profile already exists, skipping creation"
-    fi
-
-    # Create local .bashrc that sources .bashrc.shared
-    if [[ ! -f "${HOME}/.bashrc" ]]; then
-        info "Creating local .bashrc..."
-        cat > "${HOME}/.bashrc" <<'EOF'
-# Source shared bash configuration
-if [ -f "${HOME}/.bashrc.shared" ]; then
-  . "${HOME}/.bashrc.shared"
-fi
-
-# Machine-specific configuration below this line
-# Software installations will typically add their PATH exports here
-
-EOF
-    else
-        info "Local .bashrc already exists, skipping creation"
-    fi
-
-    # Create local .zshrc that sources .zshrc.shared
-    if [[ ! -f "${HOME}/.zshrc" ]]; then
-        info "Creating local .zshrc..."
-        cat > "${HOME}/.zshrc" <<'EOF'
-# Source shared zsh configuration
-if [ -f "${HOME}/.zshrc.shared" ]; then
-  source "${HOME}/.zshrc.shared"
-fi
-
-# Machine-specific configuration below this line
-# Software installations will typically add their PATH exports here
-
-EOF
-    else
-        info "Local .zshrc already exists, skipping creation"
-    fi
+    done
 }
 
 configure_os() {
