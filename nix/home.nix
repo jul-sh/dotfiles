@@ -51,136 +51,145 @@
 
       # --- .profile.shared ---
       # Nix-managed shared profile configuration
-      ".profile.shared".source = dotfilesDir + "/.profile.shared";
+      ".profile.shared" = {
+        source = dotfilesDir + "/.profile.shared";
+        force = true;
+      };
 
       # --- .bashrc.shared ---
       # Nix-managed shared bash configuration
-      ".bashrc.shared".text = ''
-        # Source shared profile configuration
-        if [ -f "$HOME/.profile.shared" ]; then
-          . "$HOME/.profile.shared"
-        fi
+      ".bashrc.shared" = {
+        text = ''
+          # Source shared profile configuration
+          if [ -f "$HOME/.profile.shared" ]; then
+            . "$HOME/.profile.shared"
+          fi
 
-        # Source Nix multi-user profile if it exists
-        if [ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]; then
-          . "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
-        fi
-        # Source Nix single-user profile if it exists
-        if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
-          . "$HOME/.nix-profile/etc/profile.d/nix.sh"
-        fi
+          # Source Nix multi-user profile if it exists
+          if [ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]; then
+            . "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
+          fi
+          # Source Nix single-user profile if it exists
+          if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+            . "$HOME/.nix-profile/etc/profile.d/nix.sh"
+          fi
 
-        # Start ZSH shell if available (bash is primarily just a fallback launcher for zsh)
-        WHICH_ZSH="$(which zsh)"
-        if [[ "$-" =~ i && -x "''${WHICH_ZSH}" && ! "''${SHELL}" -ef "''${WHICH_ZSH}" ]]; then
-          exec env SHELL="''${WHICH_ZSH}" "''${WHICH_ZSH}" -i
-        fi
+          # Start ZSH shell if available (bash is primarily just a fallback launcher for zsh)
+          WHICH_ZSH="$(which zsh)"
+          if [[ "$-" =~ i && -x "''${WHICH_ZSH}" && ! "''${SHELL}" -ef "''${WHICH_ZSH}" ]]; then
+            exec env SHELL="''${WHICH_ZSH}" "''${WHICH_ZSH}" -i
+          fi
 
-        # Initialize atuin for bash (using Nix-managed binary)
-        eval "$(${pkgs.atuin}/bin/atuin init bash)"
-      '';
+          # Initialize atuin for bash (using Nix-managed binary)
+          eval "$(${pkgs.atuin}/bin/atuin init bash)"
+        '';
+        force = true;
+      };
 
       # --- .zshrc.shared ---
       # Nix-managed shared zsh configuration
-      ".zshrc.shared".text = ''
-        # Source Nix multi-user profile if it exists
-        if [ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]; then
-          . "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
-        fi
-        # Source Nix single-user profile if it exists
-        if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
-          . "$HOME/.nix-profile/etc/profile.d/nix.sh"
-        fi
+      ".zshrc.shared" = {
+        text = ''
+          # Source Nix multi-user profile if it exists
+          if [ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]; then
+            . "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
+          fi
+          # Source Nix single-user profile if it exists
+          if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+            . "$HOME/.nix-profile/etc/profile.d/nix.sh"
+          fi
 
-        # Source shared profile if it exists
-        if [ -f "$HOME/.profile.shared" ]; then
-          source "$HOME/.profile.shared"
-        fi
+          # Source shared profile if it exists
+          if [ -f "$HOME/.profile.shared" ]; then
+            source "$HOME/.profile.shared"
+          fi
 
-        # Print a greeting message
-        echo -e "\e[3mHi girl, you're doing great this $(date +"%A"). —ฅ/ᐠ. ̫.ᐟ\ฅ—\e[0m"
+          # Print a greeting message
+          echo -e "\e[3mHi girl, you're doing great this $(date +"%A"). —ฅ/ᐠ. ̫.ᐟ\ฅ—\e[0m"
 
-        # --------------------------------
-        # ZSH Other Configuration
-        # --------------------------------
+          # --------------------------------
+          # ZSH Other Configuration
+          # --------------------------------
 
-        # Show hidden files in completions
-        setopt globdots
+          # Show hidden files in completions
+          setopt globdots
 
-        # Don't error on comments in shell
-        setopt interactivecomments
+          # Don't error on comments in shell
+          setopt interactivecomments
 
-        # Disable Ctrl+D to close session
-        setopt ignoreeof
+          # Disable Ctrl+D to close session
+          setopt ignoreeof
 
-        # --------------------------------
-        # ZSH Plugins
-        # --------------------------------
+          # --------------------------------
+          # ZSH Plugins
+          # --------------------------------
 
-        # Initialize completion system
-        autoload -Uz compinit
-        # Avoid recompiling .zcompdump too often, check if it's older than 1 day
-        if [[ ! -f ~/.zcompdump || -z $(find ~/.zcompdump -mtime -1) ]]; then
-          compinit -d ~/.zcompdump # Specify dump file path
-        else
-          compinit -i -d ~/.zcompdump # Use existing dump file without checks
-        fi
+          # Initialize completion system
+          autoload -Uz compinit
+          # Avoid recompiling .zcompdump too often, check if it's older than 1 day
+          if [[ ! -f ~/.zcompdump || -z $(find ~/.zcompdump -mtime -1) ]]; then
+            compinit -d ~/.zcompdump # Specify dump file path
+          else
+            compinit -i -d ~/.zcompdump # Use existing dump file without checks
+          fi
 
-        # Load zsh-syntax-highlighting plugin
-        source ${inputs.zsh-syntax-highlighting}/zsh-syntax-highlighting.plugin.zsh
+          # Load zsh-syntax-highlighting plugin
+          source ${inputs.zsh-syntax-highlighting}/zsh-syntax-highlighting.plugin.zsh
 
-        # Load zsh-autocomplete plugin
-        source ${inputs.zsh-autocomplete}/zsh-autocomplete.plugin.zsh
-        bindkey '^I' menu-select
-        bindkey -M menuselect '^I' menu-complete
-        zstyle ':autocomplete:tab:*' widget-style menu-complete
-        bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
-        zstyle ':autocomplete:*' min-input 3
-        # Don't prompt for confirmation if there's many completions to show
-        zstyle ':completion:*' menu yes select
-        # Esc to exit autocomplete menu
-        bindkey -M menuselect '^[' undo
-        # Restore default history binding, otherwise occupied by zsh autocomplete
-        bindkey -M emacs \
-            "^[p"   .history-search-backward \
-            "^[n"   .history-search-forward \
-            "^P"    .up-line-or-history \
-            "^[OA"  .up-line-or-history \
-            "^[[A"  .up-line-or-history \
-            "^N"    .down-line-or-history \
-            "^[OB"  .down-line-or-history \
-            "^[[B"  .down-line-or-history \
-            "^R"    .history-incremental-search-backward \
-            "^S"    .history-incremental-search-forward \
-            #
-        bindkey -a \
-            "^P"    .up-history \
-            "^N"    .down-history \
-            "k"     .up-line-or-history \
-            "^[OA"  .up-line-or-history \
-            "^[[A"  .up-line-or-history \
-            "j"     .down-line-or-history \
-            "^[OB"  .down-line-or-history \
-            "^[[B"  .down-line-or-history \
-            "/"     .vi-history-search-backward \
-            "?"     .vi-history-search-forward \
-            #
+          # Load zsh-autocomplete plugin
+          source ${inputs.zsh-autocomplete}/zsh-autocomplete.plugin.zsh
+          bindkey '^I' menu-select
+          bindkey -M menuselect '^I' menu-complete
+          zstyle ':autocomplete:tab:*' widget-style menu-complete
+          bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
+          zstyle ':autocomplete:*' min-input 3
+          # Don't prompt for confirmation if there's many completions to show
+          zstyle ':completion:*' menu yes select
+          # Esc to exit autocomplete menu
+          bindkey -M menuselect '^[' undo
+          # Restore default history binding, otherwise occupied by zsh autocomplete
+          bindkey -M emacs \
+              "^[p"   .history-search-backward \
+              "^[n"   .history-search-forward \
+              "^P"    .up-line-or-history \
+              "^[OA"  .up-line-or-history \
+              "^[[A"  .up-line-or-history \
+              "^N"    .down-line-or-history \
+              "^[OB"  .down-line-or-history \
+              "^[[B"  .down-line-or-history \
+              "^R"    .history-incremental-search-backward \
+              "^S"    .history-incremental-search-forward \
+              #
+          bindkey -a \
+              "^P"    .up-history \
+              "^N"    .down-history \
+              "k"     .up-line-or-history \
+              "^[OA"  .up-line-or-history \
+              "^[[A"  .up-line-or-history \
+              "j"     .down-line-or-history \
+              "^[OB"  .down-line-or-history \
+              "^[[B"  .down-line-or-history \
+              "/"     .vi-history-search-backward \
+              "?"     .vi-history-search-forward \
+              #
 
-        # Use atuin for history search
-        eval "$(${pkgs.atuin}/bin/atuin init zsh)"
+          # Use atuin for history search
+          eval "$(${pkgs.atuin}/bin/atuin init zsh)"
 
-        # Check for dotfile updates
-        if [ -f "$HOME/.dotfiles_update.sh" ]; then
-          source "$HOME/.dotfiles_update.sh"
-        fi
+          # Check for dotfile updates
+          if [ -f "$HOME/.dotfiles_update.sh" ]; then
+            source "$HOME/.dotfiles_update.sh"
+          fi
 
-        if [ -f "$HOME/.utils.sh" ]; then
-          source "$HOME/.utils.sh"
-        fi
+          if [ -f "$HOME/.utils.sh" ]; then
+            source "$HOME/.utils.sh"
+          fi
 
-        # Initialize starship prompt
-        eval "$(${pkgs.starship}/bin/starship init zsh)"
-      '';
+          # Initialize starship prompt
+          eval "$(${pkgs.starship}/bin/starship init zsh)"
+        '';
+        force = true;
+      };
     } // (if pkgs.stdenv.isDarwin then {
       "Library/Fonts/managed-by-nix".source = ../fonts;
       "Library/Fonts/managed-by-nix".recursive = true;
