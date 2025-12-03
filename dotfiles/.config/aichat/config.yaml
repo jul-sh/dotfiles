@@ -1,0 +1,19 @@
+# see https://github.com/sigoden/aichat/blob/main/config.example.yaml
+
+model: gemini:gemini-2.5-flash-lite
+clients:
+  - type: gemini
+    api_base: https://generativelanguage.googleapis.com/v1beta
+    patch:
+      chat_completions:
+        ".*":
+          body:
+            safetySettings:
+              - category: HARM_CATEGORY_HARASSMENT
+                threshold: BLOCK_NONE
+              - category: HARM_CATEGORY_HATE_SPEECH
+                threshold: BLOCK_NONE
+              - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+                threshold: BLOCK_NONE
+              - category: HARM_CATEGORY_DANGEROUS_CONTENT
+                threshold: BLOCK_NONE
