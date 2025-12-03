@@ -70,17 +70,14 @@
           . "$HOME/.nix-profile/etc/profile.d/nix.sh"
         fi
 
-        # Start ZSH shell if available
+        # Start ZSH shell if available (bash is primarily just a fallback launcher for zsh)
         WHICH_ZSH="$(which zsh)"
         if [[ "$-" =~ i && -x "''${WHICH_ZSH}" && ! "''${SHELL}" -ef "''${WHICH_ZSH}" ]]; then
           exec env SHELL="''${WHICH_ZSH}" "''${WHICH_ZSH}" -i
         fi
 
-        . "$HOME/.cargo/env"
-        . "$HOME/.atuin/bin/env"
-
-        [[ -f ~/.bash-preexec.sh ]] && source ~/.bash-preexec.sh
-        eval "$(atuin init bash)"
+        # Initialize atuin for bash (using Nix-managed binary)
+        eval "$(${pkgs.atuin}/bin/atuin init bash)"
       '';
 
       # --- .zshrc.shared ---
