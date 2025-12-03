@@ -70,9 +70,13 @@ install_prereqs() {
             info "Homebrew is already installed."
         fi
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        info "Updating apt and installing git and curl..."
-        sudo apt-get update
-        sudo apt-get install -y git curl
+        if command -v apt-get &>/dev/null; then
+            info "Updating apt and installing git and curl..."
+            sudo apt-get update
+            sudo apt-get install -y git curl
+        else
+            warn "apt-get not found, skipping system package installation (not Debian-based?)"
+        fi
     else
         error "Unsupported OS: $OSTYPE"
     fi
