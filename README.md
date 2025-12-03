@@ -41,13 +41,22 @@ Software installers can safely append to local files without:
 
 ## Migrating Existing Installations
 
-If you have an old installation with symlinked dotfiles, run:
+If you have an old installation (pre-Nix or with symlinked dotfiles), run:
 
 ```bash
+cd ~/git/dotfiles
+git pull
 ./migrate_shell_configs.sh
 ```
 
-This preserves your machine-specific PATH exports and customizations.
+This comprehensive migration script will:
+1. Extract and preserve your machine-specific PATH exports and customizations
+2. Install Nix (tries multi-user, falls back to single-user)
+3. Apply Home Manager configuration (generates .shared files)
+4. Create local rc files with your preserved machine-specific config
+5. Install GUI applications and configure OS settings
+
+Your existing machine-specific configurations will be preserved and moved to the local rc files.
 
 ## Updating
 

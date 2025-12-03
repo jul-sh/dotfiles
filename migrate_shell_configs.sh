@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 #
-# Migration script for shell config restructuring
-# Run this on existing machines to migrate from old .profile/.bashrc/.zshrc setup to new .profile.shared/.bashrc.shared/.zshrc.shared approach
+# Migration script for existing dotfiles installations
+# Migrates from old setup to Nix-based declarative configuration with .shared/.local split
 #
 # This script:
-# 1. Extracts any machine-specific config from the old shell config symlinks
-# 2. Creates new local shell config files (not symlinks)
-# 3. Creates symlinks to .profile.shared, .bashrc.shared and .zshrc.shared
+# 1. Extracts machine-specific config from old shell rc files
+# 2. Installs Nix if not present
+# 3. Applies Home Manager configuration (generates .shared files)
+# 4. Creates local rc files with preserved machine-specific config
+# 5. Installs GUI applications and configures OS settings
 
 set -euo pipefail
 
@@ -14,169 +16,343 @@ set -euo pipefail
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo "=== Shell Configuration Migration Script ==="
+info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1" >&2
+}
+
+error() {
+    echo -e "${RED}[ERROR]${NC} $1" >&2
+    exit 1
+}
+
+success() {
+    echo -e "${GREEN}✓${NC} $1"
+}
+
+echo "=== Dotfiles Migration to Nix Setup ==="
 echo
 
 # Get the directory where this script is located (should be the dotfiles repo)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_DIR="${SCRIPT_DIR}/dotfiles"
 
-if [[ ! -d "$DOTFILES_DIR" ]]; then
-    echo -e "${RED}ERROR: dotfiles directory not found at ${DOTFILES_DIR}${NC}"
-    echo "Please run this script from your dotfiles repository root."
-    exit 1
+if [[ ! -d "${SCRIPT_DIR}/.git" ]]; then
+    error "This script must be run from the dotfiles repository root."
 fi
 
-if [[ ! -f "${DOTFILES_DIR}/.profile.shared" ]] || [[ ! -f "${DOTFILES_DIR}/.bashrc.shared" ]] || [[ ! -f "${DOTFILES_DIR}/.zshrc.shared" ]]; then
-    echo -e "${RED}ERROR: .profile.shared, .bashrc.shared or .zshrc.shared not found in ${DOTFILES_DIR}${NC}"
-    echo "Please git pull the latest changes first."
-    exit 1
+if [[ ! -d "${SCRIPT_DIR}/nix" ]]; then
+    error "nix/ directory not found. Please git pull the latest changes first."
 fi
+
+# --- Step 1: Extract Machine-Specific Configuration ---
+info "Step 1: Extracting machine-specific configuration from existing shell rc files..."
 
 PROFILE_PATH="${HOME}/.profile"
-PROFILE_SHARED_PATH="${HOME}/.profile.shared"
-PROFILE_BACKUP="${HOME}/.profile.backup.$(date +%s)"
-
 BASHRC_PATH="${HOME}/.bashrc"
-BASHRC_SHARED_PATH="${HOME}/.bashrc.shared"
-BASHRC_BACKUP="${HOME}/.bashrc.backup.$(date +%s)"
-
 ZSHRC_PATH="${HOME}/.zshrc"
-ZSHRC_SHARED_PATH="${HOME}/.zshrc.shared"
+
+PROFILE_BACKUP="${HOME}/.profile.backup.$(date +%s)"
+BASHRC_BACKUP="${HOME}/.bashrc.backup.$(date +%s)"
 ZSHRC_BACKUP="${HOME}/.zshrc.backup.$(date +%s)"
 
-# Function to migrate a shell rc file
-migrate_rc_file() {
-    local rc_name="$1"          # e.g., "bashrc" or "zshrc"
-    local rc_path="$2"          # e.g., "${HOME}/.bashrc"
-    local rc_shared_path="$3"   # e.g., "${HOME}/.bashrc.shared"
-    local rc_backup="$4"        # e.g., "${HOME}/.bashrc.backup.12345"
-    local dotfiles_shared="$5"  # e.g., "${DOTFILES_DIR}/.bashrc.shared"
-    local marker_pattern="$6"   # e.g., "starship init" or "atuin init bash"
-    local source_cmd="$7"       # e.g., "source" or "."
-    local shell_type="$8"       # e.g., "zsh" or "bash"
+# Function to extract machine-specific config from old rc files
+extract_machine_config() {
+    local rc_path="$1"
+    local marker_pattern="$2"
 
-    echo
-    echo "=== Migrating ${rc_name} ==="
-    echo "Checking current .${rc_name} setup..."
-
-    local machine_specific=""
-
-    if [[ ! -e "$rc_path" ]]; then
-        echo -e "${YELLOW}No existing .${rc_name} found. Creating new one...${NC}"
-    elif [[ -L "$rc_path" ]]; then
-        echo -e "${GREEN}Found symlinked .${rc_name} (old setup)${NC}"
-
-        # Read the current rc file and extract machine-specific lines
-        echo "Extracting machine-specific configuration..."
-
-        # Create a backup
-        cp -L "$rc_path" "$rc_backup"
-        echo -e "${GREEN}Created backup at: ${rc_backup}${NC}"
-
-        # Extract lines after the marker pattern
-        machine_specific=$(awk "/${marker_pattern}/{flag=1; next} flag" "$rc_path" || true)
-
-        # Remove the symlink
-        echo "Removing old .${rc_name} symlink..."
-        rm "$rc_path"
-    else
-        echo -e "${YELLOW}.${rc_name} already exists as a regular file${NC}"
-
-        # Check if it already sources .${rc_name}.shared
-        if grep -q "${source_cmd}.*\.${rc_name}\.shared" "$rc_path" 2>/dev/null; then
-            echo -e "${GREEN}Migration already complete! .${rc_name} already sources .${rc_name}.shared${NC}"
-
-            # Just make sure .${rc_name}.shared symlink exists
-            if [[ ! -L "$rc_shared_path" ]]; then
-                echo "Creating .${rc_name}.shared symlink..."
-                ln -sf "$dotfiles_shared" "$rc_shared_path"
-                echo -e "${GREEN}✓ Created symlink: ${rc_shared_path} -> ${dotfiles_shared}${NC}"
-            fi
-
-            return 0
-        fi
-
-        # Regular file but old format - back it up and extract machine-specific parts
-        cp "$rc_path" "$rc_backup"
-        echo -e "${GREEN}Created backup at: ${rc_backup}${NC}"
-
-        machine_specific=$(awk "/${marker_pattern}/{flag=1; next} flag" "$rc_path" || true)
-        rm "$rc_path"
+    if [[ -f "$rc_path" ]]; then
+        # Extract lines after the marker pattern (typically where machine-specific stuff goes)
+        awk "/${marker_pattern}/{flag=1; next} flag" "$rc_path" || true
     fi
+}
 
-    # Create new local rc file
-    echo "Creating new local .${rc_name}..."
+# Extract machine-specific config
+PROFILE_MACHINE_CONFIG=""
+BASHRC_MACHINE_CONFIG=""
+ZSHRC_MACHINE_CONFIG=""
 
-    cat > "$rc_path" <<EOF
-# Source shared ${shell_type} configuration
-if [ -f "\${HOME}/.${rc_name}.shared" ]; then
-  ${source_cmd} "\${HOME}/.${rc_name}.shared"
+if [[ -L "$PROFILE_PATH" ]]; then
+    info "Found symlinked .profile (old setup)"
+    cp -L "$PROFILE_PATH" "$PROFILE_BACKUP"
+    PROFILE_MACHINE_CONFIG=$(extract_machine_config "$PROFILE_PATH" "atuin/bin/env")
+    success "Backed up .profile to ${PROFILE_BACKUP}"
+elif [[ -f "$PROFILE_PATH" ]]; then
+    if ! grep -q "\.profile\.shared" "$PROFILE_PATH" 2>/dev/null; then
+        info "Found regular .profile (old setup)"
+        cp "$PROFILE_PATH" "$PROFILE_BACKUP"
+        PROFILE_MACHINE_CONFIG=$(extract_machine_config "$PROFILE_PATH" "atuin/bin/env")
+        success "Backed up .profile to ${PROFILE_BACKUP}"
+    else
+        info ".profile already migrated, skipping extraction"
+    fi
+fi
+
+if [[ -L "$BASHRC_PATH" ]]; then
+    info "Found symlinked .bashrc (old setup)"
+    cp -L "$BASHRC_PATH" "$BASHRC_BACKUP"
+    BASHRC_MACHINE_CONFIG=$(extract_machine_config "$BASHRC_PATH" "atuin init bash")
+    success "Backed up .bashrc to ${BASHRC_BACKUP}"
+elif [[ -f "$BASHRC_PATH" ]]; then
+    if ! grep -q "\.bashrc\.shared" "$BASHRC_PATH" 2>/dev/null; then
+        info "Found regular .bashrc (old setup)"
+        cp "$BASHRC_PATH" "$BASHRC_BACKUP"
+        BASHRC_MACHINE_CONFIG=$(extract_machine_config "$BASHRC_PATH" "atuin init bash")
+        success "Backed up .bashrc to ${BASHRC_BACKUP}"
+    else
+        info ".bashrc already migrated, skipping extraction"
+    fi
+fi
+
+if [[ -L "$ZSHRC_PATH" ]]; then
+    info "Found symlinked .zshrc (old setup)"
+    cp -L "$ZSHRC_PATH" "$ZSHRC_BACKUP"
+    ZSHRC_MACHINE_CONFIG=$(extract_machine_config "$ZSHRC_PATH" "starship init zsh")
+    success "Backed up .zshrc to ${ZSHRC_BACKUP}"
+elif [[ -f "$ZSHRC_PATH" ]]; then
+    if ! grep -q "\.zshrc\.shared" "$ZSHRC_PATH" 2>/dev/null; then
+        info "Found regular .zshrc (old setup)"
+        cp "$ZSHRC_PATH" "$ZSHRC_BACKUP"
+        ZSHRC_MACHINE_CONFIG=$(extract_machine_config "$ZSHRC_PATH" "starship init zsh")
+        success "Backed up .zshrc to ${ZSHRC_BACKUP}"
+    else
+        info ".zshrc already migrated, skipping extraction"
+    fi
+fi
+
+# --- Step 2: Install Prerequisites (Nix) ---
+info "Step 2: Installing Nix (if not already installed)..."
+
+get_nix_system() {
+    local os
+    case "$OSTYPE" in
+        linux-gnu*) os="linux" ;;
+        darwin*)    os="darwin" ;;
+        *)          error "Unsupported OS for Nix: $OSTYPE" ;;
+    esac
+
+    local arch
+    case "$(uname -m)" in
+        x86_64)        arch="x86_64" ;;
+        aarch64|arm64) arch="aarch64" ;;
+        *)             error "Unsupported architecture for Nix: $(uname -m)" ;;
+    esac
+    echo "${arch}-${os}"
+}
+
+if ! command -v nix &>/dev/null; then
+    info "Nix not found. Attempting multi-user installation..."
+    # Try the Determinate Systems installer (multi-user) first.
+    if curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm; then
+        success "Multi-user Nix installation successful."
+        # Source the multi-user profile script to make 'nix' available in this session.
+        local nix_profile="/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
+        if [ -f "$nix_profile" ]; then
+            info "Sourcing Nix profile for multi-user install..."
+            . "$nix_profile"
+        else
+            error "Multi-user Nix installation seemed to succeed, but its profile script was not found. Please start a new terminal and re-run this script."
+        fi
+    else
+        warn "Multi-user installation failed. Falling back to official single-user installer."
+        # Fallback to the official installer (single-user).
+        if curl -L https://nixos.org/nix/install | sh -s -- --no-daemon; then
+            success "Single-user Nix installation successful."
+            # Source the single-user profile script.
+            local nix_profile="$HOME/.nix-profile/etc/profile.d/nix.sh"
+            if [ -f "$nix_profile" ]; then
+                info "Sourcing Nix profile for single-user install..."
+                . "$nix_profile"
+            else
+                error "Single-user Nix installation seemed to succeed, but its profile script was not found. Please start a new terminal and re-run this script."
+            fi
+        else
+            error "Both multi-user and single-user Nix installation methods failed. Please check the logs and try again."
+        fi
+    fi
+else
+    success "Nix is already installed."
+fi
+
+# --- Step 3: Apply Home Manager Configuration ---
+info "Step 3: Applying Nix Home Manager configuration..."
+
+system=$(get_nix_system)
+info "Detected Nix system: $system"
+
+# Construct the flake reference dynamically
+flake_ref="${SCRIPT_DIR}/nix#${USER}@${system}"
+info "Applying flake configuration: $flake_ref"
+
+# Remove old symlinked rc files if they exist (Home Manager will manage .shared files)
+if [[ -L "$PROFILE_PATH" ]]; then
+    info "Removing old .profile symlink..."
+    rm "$PROFILE_PATH"
+fi
+if [[ -L "$BASHRC_PATH" ]]; then
+    info "Removing old .bashrc symlink..."
+    rm "$BASHRC_PATH"
+fi
+if [[ -L "$ZSHRC_PATH" ]]; then
+    info "Removing old .zshrc symlink..."
+    rm "$ZSHRC_PATH"
+fi
+
+# Apply Home Manager configuration
+nix run home-manager/master -- switch --flake "$flake_ref" -b backup
+success "Home Manager configuration applied"
+
+# --- Step 4: Create Local RC Files ---
+info "Step 4: Creating local shell rc files with preserved machine-specific config..."
+
+# Create .profile if it doesn't exist or was removed
+if [[ ! -f "$PROFILE_PATH" ]]; then
+    info "Creating local .profile..."
+    cat > "$PROFILE_PATH" <<'EOF'
+# Source shared profile configuration
+if [ -f "${HOME}/.profile.shared" ]; then
+  . "${HOME}/.profile.shared"
 fi
 
 # Machine-specific configuration below this line
 # Software installations will typically add their PATH exports here
 
 EOF
-
-    # Append any machine-specific config that was extracted
-    if [[ -n "$machine_specific" ]]; then
-        echo "$machine_specific" >> "$rc_path"
-        echo -e "${GREEN}✓ Preserved machine-specific configuration${NC}"
-    fi
-
-    echo -e "${GREEN}✓ Created new local .${rc_name}${NC}"
-
-    # Create .${rc_name}.shared symlink
-    echo "Setting up .${rc_name}.shared symlink..."
-
-    if [[ -L "$rc_shared_path" ]]; then
-        # Check if it points to the right place
-        local current_target
-        current_target=$(readlink "$rc_shared_path")
-        if [[ "$current_target" == "$dotfiles_shared" ]]; then
-            echo -e "${GREEN}✓ .${rc_name}.shared symlink already correct${NC}"
-        else
-            echo "Updating .${rc_name}.shared symlink..."
-            ln -sf "$dotfiles_shared" "$rc_shared_path"
-            echo -e "${GREEN}✓ Updated symlink${NC}"
-        fi
-    elif [[ -e "$rc_shared_path" ]]; then
-        echo -e "${YELLOW}WARNING: .${rc_name}.shared exists but is not a symlink${NC}"
-        echo "Please manually check ${rc_shared_path}"
+    if [[ -n "$PROFILE_MACHINE_CONFIG" ]]; then
+        echo "$PROFILE_MACHINE_CONFIG" >> "$PROFILE_PATH"
+        success "Created .profile with preserved machine-specific config"
     else
-        ln -sf "$dotfiles_shared" "$rc_shared_path"
-        echo -e "${GREEN}✓ Created symlink: ${rc_shared_path} -> ${dotfiles_shared}${NC}"
+        success "Created .profile"
     fi
-}
+else
+    info "Local .profile already exists, skipping creation"
+fi
 
-# Migrate all shell configurations
-migrate_rc_file "profile" "$PROFILE_PATH" "$PROFILE_SHARED_PATH" "$PROFILE_BACKUP" "${DOTFILES_DIR}/.profile.shared" "atuin/bin/env" "." "shell"
-migrate_rc_file "bashrc" "$BASHRC_PATH" "$BASHRC_SHARED_PATH" "$BASHRC_BACKUP" "${DOTFILES_DIR}/.bashrc.shared" "atuin init bash" "." "bash"
-migrate_rc_file "zshrc" "$ZSHRC_PATH" "$ZSHRC_SHARED_PATH" "$ZSHRC_BACKUP" "${DOTFILES_DIR}/.zshrc.shared" "starship init zsh" "source" "zsh"
+# Create .bashrc if it doesn't exist or was removed
+if [[ ! -f "$BASHRC_PATH" ]]; then
+    info "Creating local .bashrc..."
+    cat > "$BASHRC_PATH" <<'EOF'
+# Source shared bash configuration
+if [ -f "${HOME}/.bashrc.shared" ]; then
+  . "${HOME}/.bashrc.shared"
+fi
 
-# Summary
+# Machine-specific configuration below this line
+# Software installations will typically add their PATH exports here
+
+EOF
+    if [[ -n "$BASHRC_MACHINE_CONFIG" ]]; then
+        echo "$BASHRC_MACHINE_CONFIG" >> "$BASHRC_PATH"
+        success "Created .bashrc with preserved machine-specific config"
+    else
+        success "Created .bashrc"
+    fi
+else
+    info "Local .bashrc already exists, skipping creation"
+fi
+
+# Create .zshrc if it doesn't exist or was removed
+if [[ ! -f "$ZSHRC_PATH" ]]; then
+    info "Creating local .zshrc..."
+    cat > "$ZSHRC_PATH" <<'EOF'
+# Source shared zsh configuration
+if [ -f "${HOME}/.zshrc.shared" ]; then
+  source "${HOME}/.zshrc.shared"
+fi
+
+# Machine-specific configuration below this line
+# Software installations will typically add their PATH exports here
+
+EOF
+    if [[ -n "$ZSHRC_MACHINE_CONFIG" ]]; then
+        echo "$ZSHRC_MACHINE_CONFIG" >> "$ZSHRC_PATH"
+        success "Created .zshrc with preserved machine-specific config"
+    else
+        success "Created .zshrc"
+    fi
+else
+    info "Local .zshrc already exists, skipping creation"
+fi
+
+# --- Step 5: Install GUI Applications (Optional) ---
+info "Step 5: Installing GUI applications..."
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    if command -v brew &>/dev/null; then
+        info "Installing Raycast and Zed via Homebrew..."
+        brew install --cask --force raycast zed || warn "Failed to install some GUI apps"
+    else
+        warn "Homebrew not found, skipping GUI app installation"
+    fi
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    info "Installing Zed editor..."
+    curl -f https://zed.dev/install.sh | sh || warn "Failed to install Zed"
+fi
+
+# --- Step 6: OS-Specific Configuration (Optional) ---
+info "Step 6: Applying OS-specific configurations..."
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    if [[ -d "${SCRIPT_DIR}/macos" ]]; then
+        info "Configuring macOS system settings..."
+
+        # Remap Caps Lock to Backspace
+        if sudo cp "${SCRIPT_DIR}/macos/capslock_to_backspace.sh" /Library/Scripts/ 2>/dev/null && \
+           sudo chmod +x /Library/Scripts/capslock_to_backspace.sh 2>/dev/null && \
+           sudo cp "${SCRIPT_DIR}/macos/com.capslock_to_backspace.plist" /Library/LaunchDaemons/ 2>/dev/null; then
+            sudo launchctl load -w /Library/LaunchDaemons/com.capslock_to_backspace.plist 2>/dev/null || true
+        fi
+
+        # Configure sleep on lid close
+        if [[ -f "${SCRIPT_DIR}/macos/sleep_on_lid_close.sh" ]] && \
+           sudo cp "${SCRIPT_DIR}/macos/sleep_on_lid_close.sh" /Library/Scripts/ 2>/dev/null && \
+           sudo chmod +x /Library/Scripts/sleep_on_lid_close.sh 2>/dev/null && \
+           sudo cp "${SCRIPT_DIR}/macos/com.julsh.sleeponlidclose.plist" /Library/LaunchDaemons/ 2>/dev/null; then
+            sudo launchctl load -w /Library/LaunchDaemons/com.julsh.sleeponlidclose.plist 2>/dev/null || true
+        fi
+
+        # Dock & UI settings
+        defaults write com.apple.dock show-recents -int 0 2>/dev/null || true
+        defaults write com.apple.dock minimize-to-application -int 1 2>/dev/null || true
+        defaults write com.apple.dock tilesize -int 34 2>/dev/null || true
+        defaults write com.apple.dock orientation -string "left" 2>/dev/null || true
+        defaults write NSGlobalDomain AppleShowAllExtensions -bool true 2>/dev/null || true
+        killall Dock 2>/dev/null || true
+
+        success "macOS configuration applied"
+    fi
+fi
+
+# --- Summary ---
 echo
 echo -e "${GREEN}=== Migration Complete! ===${NC}"
 echo
 echo "Summary:"
-echo "  • ~/.profile is now a regular file (machine-specific config)"
-echo "  • ~/.profile.shared is a symlink to dotfiles/.profile.shared"
-echo "  • ~/.bashrc is now a regular file (machine-specific config)"
-echo "  • ~/.bashrc.shared is a symlink to dotfiles/.bashrc.shared"
-echo "  • ~/.zshrc is now a regular file (machine-specific config)"
-echo "  • ~/.zshrc.shared is a symlink to dotfiles/.zshrc.shared"
-echo "  • Machine-specific PATH exports preserved"
-if [[ -f "$PROFILE_BACKUP" ]]; then
-    echo "  • Backup saved at: ${PROFILE_BACKUP}"
-fi
-if [[ -f "$BASHRC_BACKUP" ]]; then
-    echo "  • Backup saved at: ${BASHRC_BACKUP}"
-fi
-if [[ -f "$ZSHRC_BACKUP" ]]; then
-    echo "  • Backup saved at: ${ZSHRC_BACKUP}"
-fi
+echo "  • Nix installed and configured"
+echo "  • Home Manager applied (manages .shared files)"
+echo "  • Local rc files created with machine-specific config preserved"
+echo "  • ~/.profile, ~/.bashrc, ~/.zshrc are now local (untracked)"
+echo "  • ~/.profile.shared, ~/.bashrc.shared, ~/.zshrc.shared are Nix-managed"
 echo
-echo "Please restart your terminal or run: source ~/.profile && source ~/.bashrc (for bash) or source ~/.zshrc (for zsh)"
+
+if [[ -f "$PROFILE_BACKUP" ]] || [[ -f "$BASHRC_BACKUP" ]] || [[ -f "$ZSHRC_BACKUP" ]]; then
+    echo "Backups saved:"
+    [[ -f "$PROFILE_BACKUP" ]] && echo "  • ${PROFILE_BACKUP}"
+    [[ -f "$BASHRC_BACKUP" ]] && echo "  • ${BASHRC_BACKUP}"
+    [[ -f "$ZSHRC_BACKUP" ]] && echo "  • ${ZSHRC_BACKUP}"
+    echo
+fi
+
+echo "Architecture:"
+echo "  Local .zshrc → sources .zshrc.shared (Nix-managed)"
+echo "                     → sources .profile.shared (Nix-managed)"
+echo
+echo "Software installers can now safely modify your local rc files without"
+echo "conflicting with Nix or creating git changes."
+echo
+echo -e "${GREEN}Please restart your terminal or run: source ~/.zshrc${NC}"
