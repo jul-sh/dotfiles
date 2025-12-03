@@ -67,8 +67,16 @@ extract_machine_config() {
     local marker_pattern="$2"
 
     if [[ -f "$rc_path" ]]; then
-        # Extract lines after the marker pattern (typically where machine-specific stuff goes)
-        awk "/${marker_pattern}/{flag=1; next} flag" "$rc_path" || true
+        # Extract lines after the marker pattern, then filter out common paths
+        # that are now in .profile.shared to avoid duplicates
+        awk "/${marker_pattern}/{flag=1; next} flag" "$rc_path" | \
+        grep -v -E '^\s*export PATH="\$HOME/\.cargo/bin:\$PATH"' | \
+        grep -v -E '^\s*export PATH="\$HOME/\.local/bin:\$PATH"' | \
+        grep -v -E '^\s*export PATH="\$HOME/go/bin:\$PATH"' | \
+        grep -v -E '^\s*export PATH="\$HOME/\.npm-global/bin:\$PATH"' | \
+        grep -v -E '^\s*export PATH="/usr/local/bin:\$PATH"' | \
+        grep -v -E '^\s*\. "\$HOME/\.cargo/env"' | \
+        grep -v -E '^\s*\. "\$HOME/\.atuin/bin/env"' || true
     fi
 }
 
