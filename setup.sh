@@ -100,14 +100,11 @@ install_desktop_apps() {
 }
 
 setup_local_rc_files() {
-    local -A rc_files=(
-        [".profile"]=".profile.shared"
-        [".bashrc"]=".bashrc.shared"
-        [".zshrc"]=".zshrc.shared"
-    )
+    local pairs=".profile:.profile.shared .bashrc:.bashrc.shared .zshrc:.zshrc.shared"
 
-    for rc in "${!rc_files[@]}"; do
-        local shared="${rc_files[$rc]}"
+    for pair in $pairs; do
+        local rc="${pair%%:*}"
+        local shared="${pair#*:}"
         [[ -f "${HOME}/${rc}" ]] && continue
 
         echo "Creating ${rc}..."
@@ -161,8 +158,7 @@ main() {
     setup_local_rc_files
     install_desktop_apps
     configure_os
-    echo "✓ Setup complete. Restarting shell..."
-    exec "$SHELL"
+    echo "✓ Setup complete. Please restart your terminal for changes to take effect."
 }
 
 main
