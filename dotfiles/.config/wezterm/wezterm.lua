@@ -38,7 +38,7 @@ return {
   },
   hide_tab_bar_if_only_one_tab = true,
   font = wezterm.font {
-    family = "Iosevka Julsh Mono", -- Corrected font name, assuming it's installed
+    family = "Iosevka Charon Mono", -- Corrected font name, assuming it's installed
     weight = "Medium",             -- Corrected to a valid weight string
   },
   font_size = 18.0,
