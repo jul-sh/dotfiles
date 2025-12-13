@@ -81,10 +81,11 @@ install_prereqs() {
 
 apply_nix_config() {
     echo "Applying Home Manager configuration..."
-    ensure_local_host_flake
+    # Override flaky substituters from system Nix config to stick to cache.nixos.org
+    local nix_config=$'experimental-features = nix-command flakes\nsubstituters = https://cache.nixos.org/\ntrusted-substituters = https://cache.nixos.org/\n'
     local flake_ref="./nix#${USER}@$(get_nix_system)"
-    nix run home-manager/master -- switch --flake "$flake_ref" -b backup \
-        --override-input host "path:./nix/hosts/local"
+    NIX_CONFIG="$nix_config" \
+    nix run --no-write-lock-file "./nix#home-manager" -- switch --flake "$flake_ref" -b backup
 }
 
 install_desktop_apps() {
