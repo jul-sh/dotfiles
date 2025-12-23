@@ -130,6 +130,16 @@ install_launchdaemon() {
     sudo launchctl load -w "$plist_dst" 2>/dev/null || true
 }
 
+install_cargo_tools() {
+    echo "Installing cargo tools..."
+    # Ensure rustup/cargo is available (installed via Nix)
+    if command -v cargo &>/dev/null; then
+        cargo install fresh-editor
+    else
+        echo "Warning: cargo not found, skipping cargo tools installation"
+    fi
+}
+
 configure_os() {
     [[ "$OSTYPE" == "darwin"* ]] || return 0
 
@@ -158,6 +168,7 @@ main() {
     apply_nix_config
     setup_local_rc_files
     install_desktop_apps
+    install_cargo_tools
     configure_os
     echo "✓ Setup complete. Please restart your terminal for changes to take effect."
 }

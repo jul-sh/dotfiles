@@ -2,7 +2,7 @@
 	name = Juliette Pluto
 	email = git@jul.sh
 [core]
-  editor = zed --new --wait
+  editor = fresh
 	ignorecase = false
 [commit]
 	gpgsign = false

@@ -16,6 +16,7 @@
     git
     gh
     rustup
+    direnv
   ];
 
   # --- 2. Dotfiles ---
@@ -146,6 +147,9 @@
 
           # Initialize atuin for bash (using Nix-managed binary)
           eval "$(${pkgs.atuin}/bin/atuin init bash)"
+
+          # Initialize direnv for bash
+          eval "$(${pkgs.direnv}/bin/direnv hook bash)"
         '';
         force = true;
       };
@@ -248,6 +252,9 @@
           if [ -f "$HOME/.utils.sh" ]; then
             source "$HOME/.utils.sh"
           fi
+
+          # Initialize direnv for zsh
+          eval "$(${pkgs.direnv}/bin/direnv hook zsh)"
 
           # Initialize starship prompt
           eval "$(${pkgs.starship}/bin/starship init zsh)"
