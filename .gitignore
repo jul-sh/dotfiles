@@ -4,4 +4,4 @@
 dotfiles/.bashrc
 dotfiles/.profile
 dotfiles/.zshrc
-nix/hosts/
+nix/hosts/local/
