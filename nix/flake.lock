@@ -21,6 +21,17 @@
         "type": "github"
       }
     },
+    "local-host": {
+      "locked": {
+        "path": "./hosts/default",
+        "type": "path"
+      },
+      "original": {
+        "path": "./hosts/default",
+        "type": "path"
+      },
+      "parent": []
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1735563628,
@@ -40,6 +51,7 @@
     "root": {
       "inputs": {
         "home-manager": "home-manager",
+        "local-host": "local-host",
         "nixpkgs": "nixpkgs",
         "zsh-autocomplete": "zsh-autocomplete",
         "zsh-syntax-highlighting": "zsh-syntax-highlighting"
@@ -48,11 +60,11 @@
     "zsh-autocomplete": {
       "flake": false,
       "locked": {
-        "lastModified": 1752058246,
-        "narHash": "sha256-7v8dkrwhEszl8mVIMe8oJdaqK0ZZtODdWaaO1Z4Ldhk=",
+        "lastModified": 1765295438,
+        "narHash": "sha256-998rYEyYD67XleSDbqvnQptRrGuG2N2AgFvTpFWvoV8=",
         "owner": "marlonrichert",
         "repo": "zsh-autocomplete",
-        "rev": "316c588a92e3444e919ca9a341fc8894c82800a2",
+        "rev": "bbba73ebdc7c01323e09d4d518e51e2d6847ccc2",
         "type": "github"
       },
       "original": {

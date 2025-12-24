@@ -1,12 +1,7 @@
 # ~/.config/atuin/config.toml
 
-# Set the default filter to 'global' to include history from all sessions and hosts
-# when you start the search.
-# Other options: 'host', 'session', 'directory', 'workspace'
+# Default filter mode for search (global shows all sessions)
 filter_mode = "global"
 
-# Enable smart_sort to improve the ordering, which generally puts more relevant
-# (often more recent or more frequently used) results higher up.
-# This may help in prioritizing recent commands within the overall global search.
-# smart_sort is often the default or recommended setting for good sorting.
+# Smart sorting: ranks by recency + frequency
 smart_sort = true
