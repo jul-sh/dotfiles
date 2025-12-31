@@ -11,6 +11,7 @@
     starship
     atuin
     uv
+    inputs.fresh.packages.${pkgs.system}.default
     zellij
     aichat
     git
