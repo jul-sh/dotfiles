@@ -128,7 +128,11 @@ install_cargo_tools() {
 
     # Ensure rustup/cargo is available (installed via Nix)
     if command -v cargo &>/dev/null; then
-        cargo install fresh-editor
+        if ! cargo install --list | grep -q "^fresh-editor v"; then
+            cargo install fresh-editor
+        else
+            echo "fresh-editor is already installed, skipping..."
+        fi
     else
         echo "Warning: cargo not found, skipping cargo tools installation"
     fi
