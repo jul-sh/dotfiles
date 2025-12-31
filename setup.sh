@@ -140,23 +140,34 @@ setup_local_rc_files() {
     for pair in $pairs; do
         local rc="${pair%%:*}"
         local shared="${pair#*:}"
-        [[ -f "${HOME}/${rc}" ]] && continue
+        local target="${HOME}/${rc}"
+        
+        # Logic to source .ENV (case invariant)
+        local env_logic='
+# Source .ENV (case invariant) if it exists
+if command -v find >/dev/null 2>&1; then
+    _env_file=$(find "$HOME" -maxdepth 1 -iname ".env" -type f | head -n 1)
+    [ -n "$_env_file" ] && . "$_env_file"
+    unset _env_file
+fi'
 
-        echo "Creating ${rc}..."
-        cat > "${HOME}/${rc}" <<EOF
+        if [[ -f "$target" ]]; then
+            if ! grep -q "Source .ENV" "$target"; then
+                echo "Updating ${rc}..."
+                echo "$env_logic" >> "$target"
+            fi
+        else
+            echo "Creating ${rc}..."
+            cat > "$target" <<EOF
 # Source shared configuration (managed by Nix Home Manager)
 [ -f "\${HOME}/${shared}" ] && . "\${HOME}/${shared}"
 
-# Source .ENV (case invariant) if it exists
-if command -v find >/dev/null 2>&1; then
-    _env_file=\$(find "\$HOME" -maxdepth 1 -iname ".env" -type f | head -n 1)
-    [ -n "\$_env_file" ] && . "\$_env_file"
-    unset _env_file
-fi
+$env_logic
 
 # Machine-specific configuration below
 
 EOF
+        fi
     done
 }
 
