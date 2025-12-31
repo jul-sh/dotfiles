@@ -104,25 +104,6 @@ install_desktop_apps() {
     fi
 }
 
-setup_local_rc_files() {
-    local pairs=".profile:.profile.shared .bashrc:.bashrc.shared .zshrc:.zshrc.shared"
-
-    for pair in $pairs; do
-        local rc="${pair%%:*}"
-        local shared="${pair#*:}"
-        [[ -f "${HOME}/${rc}" ]] && continue
-
-        echo "Creating ${rc}..."
-        cat > "${HOME}/${rc}" <<EOF
-# Source shared configuration (managed by Nix Home Manager)
-[ -f "\${HOME}/${shared}" ] && . "\${HOME}/${shared}"
-
-# Machine-specific configuration below
-
-EOF
-    done
-}
-
 install_launchdaemon() {
     local script_src="$1" script_dst="$2" plist_src="$3" plist_dst="$4"
     cmp -s "$script_src" "$script_dst" && cmp -s "$plist_src" "$plist_dst" && return 0
@@ -136,12 +117,47 @@ install_launchdaemon() {
 
 install_cargo_tools() {
     echo "Installing cargo tools..."
+    
+    # Ensure rustup is configured if installed
+    if command -v rustup &>/dev/null; then
+        if rustup show | grep -q "no active toolchain"; then
+            echo "Setting rustup default toolchain to nightly..."
+            rustup default nightly
+        fi
+    fi
+
     # Ensure rustup/cargo is available (installed via Nix)
     if command -v cargo &>/dev/null; then
         cargo install fresh-editor
     else
         echo "Warning: cargo not found, skipping cargo tools installation"
     fi
+}
+
+setup_local_rc_files() {
+    local pairs=".profile:.profile.shared .bashrc:.bashrc.shared .zshrc:.zshrc.shared"
+
+    for pair in $pairs; do
+        local rc="${pair%%:*}"
+        local shared="${pair#*:}"
+        [[ -f "${HOME}/${rc}" ]] && continue
+
+        echo "Creating ${rc}..."
+        cat > "${HOME}/${rc}" <<EOF
+# Source shared configuration (managed by Nix Home Manager)
+[ -f "\${HOME}/${shared}" ] && . "\${HOME}/${shared}"
+
+# Source .ENV (case invariant) if it exists
+if command -v find >/dev/null 2>&1; then
+    _env_file=\$(find "\$HOME" -maxdepth 1 -iname ".env" -type f | head -n 1)
+    [ -n "\$_env_file" ] && . "\$_env_file"
+    unset _env_file
+fi
+
+# Machine-specific configuration below
+
+EOF
+    done
 }
 
 configure_os() {
