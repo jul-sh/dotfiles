@@ -26,7 +26,7 @@
   home.file =
     let
       dotfilesDir = "/Users/julsh/git/dotfiles/dotfiles";
-      dotfilesContents = builtins.readDir ../dotfiles;
+      dotfilesContents = lib.filterAttrs (name: type: name != ".config") (builtins.readDir ../dotfiles);
       # Create file mappings - all files in dotfiles/ get linked out-of-store
       autoMappings = lib.mapAttrs' (name: type: {
         name = name;
@@ -53,8 +53,22 @@
       ".local/share/fonts/managed-by-nix".recursive = true;
     });
 
+  # --- Files in .config (XDG_CONFIG_HOME) ---
+  # Automatically link all files and directories from dotfiles/.config
+  xdg.configFile =
+    let
+      configDir = "/Users/julsh/git/dotfiles/dotfiles/.config";
+      configContents = builtins.readDir ../dotfiles/.config;
+    in
+    lib.mapAttrs' (name: type: {
+      name = name;
+      value = {
+        source = config.lib.file.mkOutOfStoreSymlink "${configDir}/${name}";
+      };
+    }) configContents;
+
   # --- 3. Fonts ---
-  fonts.fontconfig.enable = true; # Ensures font cache is updated on Linux
+  fonts.fontconfig.enable = pkgs.stdenv.isLinux; # Ensures font cache is updated on Linux
 
   # Allow Home Manager to manage itself
   programs.home-manager.enable = true;
