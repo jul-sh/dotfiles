@@ -19,12 +19,15 @@ What `./setup.sh` does:
 
 ## Layout
 
-- Shared (Nix-managed): `.profile.shared`, `.bashrc.shared`, `.zshrc.shared`, and the files in ./dotfiles.
-- Local (yours): `.profile`, `.bashrc`, `.zshrc` are created once, untracked, and only source the `.shared` files. Installers can append here without touching Nix-managed state.
+- **Live-Edited (Symlinked)**: Every file in `./dotfiles` (including shared shell scripts) is linked directly to your repository using `mkOutOfStoreSymlink`. Just edit and save.
+- **Nix-Managed Environment**: Nix handles package installation and environment setup. It generates a small `~/.zsh_plugins.sh` to load store-dependent ZSH plugins.
+- **Local Wrappers**: Your git-ignored `.zshrc`, `.bashrc`, etc., source the `.shared` files.
 
-### Flow
-```
-~/.zshrc (local)
-  └─ sources .zshrc.shared (Nix-managed)
-       └─ sources .profile.shared (Nix-managed)
+### Shell Source Flow
+```text
+~/.zshrc (Local wrapper)
+  └─ sources ~/.zshrc.shared (Live-editable in dotfiles/)
+       ├─ sources ~/.profile.shared (Live-editable in dotfiles/)
+       ├─ sources ~/.utils.sh (Live-editable in dotfiles/)
+       └─ sources ~/.zsh_plugins.sh (Nix-managed plugins)
 ```

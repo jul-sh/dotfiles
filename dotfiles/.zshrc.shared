@@ -1,11 +1,3 @@
-# Source Nix multi-user profile if it exists
-if [ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]; then
-  . "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
-fi
-# Source Nix single-user profile if it exists
-if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
-  . "$HOME/.nix-profile/etc/profile.d/nix.sh"
-fi
 
 # Source shared profile if it exists
 if [ -f "$HOME/.profile.shared" ]; then
@@ -29,8 +21,13 @@ setopt interactivecomments
 setopt ignoreeof
 
 # --------------------------------
-# ZSH Plugins (Nix-managed)
+# ZSH Plugins (Setup by Nix in home.nix)
 # --------------------------------
+
+# Load Nix-managed plugins (syntax highlighting, autocomplete)
+if [ -f "$HOME/.zsh_plugins.sh" ]; then
+  source "$HOME/.zsh_plugins.sh"
+fi
 
 # Initialize completion system
 autoload -Uz compinit
@@ -41,11 +38,7 @@ else
   compinit -i -d ~/.zcompdump # Use existing dump file without checks
 fi
 
-# Load zsh-syntax-highlighting plugin from Nix flake input
-source @zsh-syntax-highlighting@/zsh-syntax-highlighting.plugin.zsh
-
-# Load zsh-autocomplete plugin from Nix flake input
-source @zsh-autocomplete@/zsh-autocomplete.plugin.zsh
+# Autocomplete keybindings
 bindkey '^I' menu-select
 bindkey -M menuselect '^I' menu-complete
 zstyle ':autocomplete:tab:*' widget-style menu-complete
@@ -82,19 +75,17 @@ bindkey -a \
     #
 
 # Use atuin for history search
-eval "$(@atuin@ init zsh)"
-
-# Check for dotfile updates
-if [ -f "$HOME/.dotfiles_update.sh" ]; then
-  source "$HOME/.dotfiles_update.sh"
+if command -v atuin &> /dev/null; then
+  eval "$(atuin init zsh)"
 fi
 
-if [ -f "$HOME/.utils.sh" ]; then
-  source "$HOME/.utils.sh"
-fi
 
 # Initialize direnv for zsh
-eval "$(@direnv@ hook zsh)"
+if command -v direnv &> /dev/null; then
+  eval "$(direnv hook zsh)"
+fi
 
 # Initialize starship prompt
-eval "$(@starship@ init zsh)"
+if command -v starship &> /dev/null; then
+  eval "$(starship init zsh)"
+fi

@@ -1,0 +1,21 @@
+# Source shared profile configuration
+if [ -f "$HOME/.profile.shared" ]; then
+  . "$HOME/.profile.shared"
+fi
+
+
+# Start ZSH shell if available (bash is primarily just a fallback launcher for zsh)
+WHICH_ZSH="$(which zsh)"
+if [[ "$-" =~ i && -x "${WHICH_ZSH}" && ! "${SHELL}" -ef "${WHICH_ZSH}" ]]; then
+  exec env SHELL="${WHICH_ZSH}" "${WHICH_ZSH}" -i
+fi
+
+# Initialize atuin for bash
+if command -v atuin &> /dev/null; then
+  eval "$(atuin init bash)"
+fi
+
+# Initialize direnv for bash
+if command -v direnv &> /dev/null; then
+  eval "$(direnv hook bash)"
+fi

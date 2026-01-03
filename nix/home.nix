@@ -22,72 +22,29 @@
 
   # --- 2. Dotfiles ---
   # This section declaratively manages your configuration files.
-  # We generate .shared files that are sourced by local (untracked) rc files,
-  # allowing machine-specific customizations without Nix conflicts.
-
-  # --- Files in HOME (~) ---
+  # We use out-of-store symlinks to allow live editing in your repo.
   home.file =
     let
-      dotfilesDir = ../dotfiles;
-      # Read directory contents and filter out shell rc files and .config
-      dotfilesContents = lib.filterAttrs
-        (name: type:
-          name != ".config" &&
-          name != ".bashrc.shared" &&
-          name != ".profile.shared" &&
-          name != ".zshrc.shared" &&
-          name != ".utils.sh"
-        )
-        (builtins.readDir dotfilesDir);
-
-      # Create file mappings - regular files get direct source, directories get recursive
+      dotfilesDir = "/Users/julsh/git/dotfiles/dotfiles";
+      dotfilesContents = builtins.readDir ../dotfiles;
+      # Create file mappings - all files in dotfiles/ get linked out-of-store
       autoMappings = lib.mapAttrs' (name: type: {
         name = name;
         value = {
-          source = dotfilesDir + "/${name}";
-        } // lib.optionalAttrs (type == "directory") { recursive = true; };
+          source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/${name}";
+        };
       }) dotfilesContents;
     in
     autoMappings // {
       # Create an empty .hushlogin to prevent the "last login" message in the terminal.
       ".hushlogin".text = "";
 
-      # --- .profile.shared ---
-      # Nix-managed shared profile configuration (loaded from external file)
-      ".profile.shared" = {
-        text = builtins.readFile ./shell/profile.sh;
-        force = true;
-      };
-
-      # --- .bashrc.shared ---
-      # Nix-managed shared bash configuration (loaded from external file)
-      ".bashrc.shared" = {
-        text = builtins.replaceStrings
-          [ "@atuin@" "@direnv@" ]
-          [ "${pkgs.atuin}/bin/atuin" "${pkgs.direnv}/bin/direnv" ]
-          (builtins.readFile ./shell/bashrc.sh);
-        force = true;
-      };
-
-      # --- .zshrc.shared ---
-      # Nix-managed shared zsh configuration (loaded from external file)
-      ".zshrc.shared" = {
-        text = builtins.replaceStrings
-          [ "@zsh-syntax-highlighting@" "@zsh-autocomplete@" "@atuin@" "@direnv@" "@starship@" ]
-          [ "${inputs.zsh-syntax-highlighting}" "${inputs.zsh-autocomplete}" "${pkgs.atuin}/bin/atuin" "${pkgs.direnv}/bin/direnv" "${pkgs.starship}/bin/starship" ]
-          (builtins.readFile ./shell/zshrc.sh);
-        force = true;
-      };
-
-      # --- .utils.sh ---
-      # Nix-managed shared utils configuration (loaded from external file)
-      ".utils.sh" = {
-        text = builtins.replaceStrings
-          [ "@aichat@" ]
-          [ "${pkgs.aichat}/bin/aichat" ]
-          (builtins.readFile ./shell/utils.sh);
-        force = true;
-      };
+      # This file is managed by Nix to handle store-path dependent plugin loading.
+      # It is sourced by your live-editable .zshrc.shared.
+      ".zsh_plugins.sh".text = ''
+        source ${inputs.zsh-syntax-highlighting}/zsh-syntax-highlighting.plugin.zsh
+        source ${inputs.zsh-autocomplete}/zsh-autocomplete.plugin.zsh
+      '';
     } // (if pkgs.stdenv.isDarwin then {
       "Library/Fonts/managed-by-nix".source = ../fonts;
       "Library/Fonts/managed-by-nix".recursive = true;
@@ -95,20 +52,6 @@
       ".local/share/fonts/managed-by-nix".source = ../fonts;
       ".local/share/fonts/managed-by-nix".recursive = true;
     });
-
-  # --- Files in .config (XDG_CONFIG_HOME) ---
-  # Automatically link all files and directories from dotfiles/.config
-  xdg.configFile =
-    let
-      configDir = ../dotfiles/.config;
-      configContents = builtins.readDir configDir;
-    in
-    lib.mapAttrs' (name: type: {
-      name = name;
-      value = {
-        source = configDir + "/${name}";
-      } // lib.optionalAttrs (type == "directory") { recursive = true; };
-    }) configContents;
 
   # --- 3. Fonts ---
   fonts.fontconfig.enable = true; # Ensures font cache is updated on Linux

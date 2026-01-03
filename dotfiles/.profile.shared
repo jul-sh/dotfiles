@@ -1,3 +1,12 @@
+# Source Nix multi-user profile if it exists
+if [ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]; then
+  . "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
+fi
+# Source Nix single-user profile if it exists
+if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+  . "$HOME/.nix-profile/etc/profile.d/nix.sh"
+fi
+
 alias ai='aichat -e'
 
 # Add user-level package manager binaries to PATH
@@ -26,9 +35,9 @@ fi
 
 # A smart zellij attach/create function.
 # Usage:
-#   za          - Attaches to a session for the current directory, or creates one.
-#   za <name>   - Attaches to or creates a session with a specific name.
-za() {
+#   attach          - Attaches to a session for the current directory, or creates one.
+#   attach <name>   - Attaches to or creates a session with a specific name.
+attach() {
   # If an argument is provided, use it as the session name directly.
   if [[ -n "$1" ]]; then
     zellij attach "$1" || zellij --session "$1"
@@ -61,3 +70,13 @@ za() {
   # Attach to the session if it exists, otherwise create it with the new name.
   zellij attach "$session_name" || zellij --session "$session_name"
 }
+
+# Source utils if they exist
+if [ -f "$HOME/.utils.sh" ]; then
+  source "$HOME/.utils.sh"
+fi
+
+# Check for dotfile updates
+if [ -f "$HOME/.dotfiles_update.sh" ]; then
+  source "$HOME/.dotfiles_update.sh"
+fi

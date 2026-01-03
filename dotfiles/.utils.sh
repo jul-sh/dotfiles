@@ -41,7 +41,7 @@ END_OF_INSTRUCTION
 
   echo "✨ started formatting"
 
-  pbpaste | @aichat@ "$instruction" | sed -e 's/^```bash[[:space:]]*//' -e 's/[[:space:]]*```$//' | pbcopy
+  pbpaste | aichat "$instruction" | sed -e 's/^```bash[[:space:]]*//' -e 's/[[:space:]]*```$//' | pbcopy
 
   echo "✨ finished formatting"
 }
