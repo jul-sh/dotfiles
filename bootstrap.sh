@@ -32,7 +32,29 @@ update_existing_repo() {
     ref="${TARGET_REF:-${current_branch:-${default_branch:-main}}}"
 
     git -C "$CHECKOUT_DIR" checkout "$ref" >/dev/null 2>&1 || true
-    git -C "$CHECKOUT_DIR" pull --ff-only origin "$ref"
+    if ! git -C "$CHECKOUT_DIR" pull --ff-only origin "$ref"; then
+        echo "################################################################################"
+        echo "ERROR: Fast-forward pull failed in $CHECKOUT_DIR"
+        echo "This usually happens when local changes conflict with upstream."
+        echo "################################################################################"
+        echo
+        git -C "$CHECKOUT_DIR" status
+        echo
+        echo "How would you like to proceed?"
+        echo " [r] Reset to upstream (WARNING: deletes all local changes)"
+        echo " [m] Manual resolution (exit script)"
+        echo -n "Option [r/M]: "
+        read -r choice < /dev/tty || true
+        case "$choice" in
+            r|R)
+                echo "Resetting to origin/$ref..."
+                git -C "$CHECKOUT_DIR" reset --hard "origin/$ref"
+                ;;
+            *)
+                die "Aborting. Please resolve conflicts in $CHECKOUT_DIR and re-run."
+                ;;
+        esac
+    fi
     return 0
 }
 
