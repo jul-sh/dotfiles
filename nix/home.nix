@@ -25,7 +25,7 @@
   # We use out-of-store symlinks to allow live editing in your repo.
   home.file =
     let
-      dotfilesDir = "/Users/julsh/git/dotfiles/dotfiles";
+      dotfilesDir = "${config.home.homeDirectory}/git/dotfiles/dotfiles";
       dotfilesContents = lib.filterAttrs (name: type: name != ".config") (builtins.readDir ../dotfiles);
       # Create file mappings - all files in dotfiles/ get linked out-of-store
       autoMappings = lib.mapAttrs' (name: type: {
@@ -57,7 +57,7 @@
   # Automatically link all files and directories from dotfiles/.config
   xdg.configFile =
     let
-      configDir = "/Users/julsh/git/dotfiles/dotfiles/.config";
+      configDir = "${config.home.homeDirectory}/git/dotfiles/dotfiles/.config";
       configContents = builtins.readDir ../dotfiles/.config;
     in
     lib.mapAttrs' (name: type: {
