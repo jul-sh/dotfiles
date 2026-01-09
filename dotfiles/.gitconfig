@@ -8,6 +8,8 @@
 	gpgsign = false
 [push]
 	default = current
+[pull]
+	rebase = true
 [diff]
     tool = default-difftool
 [difftool "default-difftool"]
