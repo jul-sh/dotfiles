@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Pre-push hook: Ensure flake.lock is up to date before pushing
+# Install: ln -sf ../../hooks/pre-push .git/hooks/pre-push
+
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+echo "Checking flake.lock freshness..."
+
+# Run nix flake lock with --dry-run to see if anything would change
+# If the output shows updates, the lock file is out of date
+output=$(nix flake lock ./nix --no-update-lock-file 2>&1) || true
+
+if echo "$output" | grep -q "Updated input"; then
+    echo "error: flake.lock is out of date. Run 'nix flake update' in the nix directory and commit the changes."
+    echo "$output"
+    exit 1
+fi
+
+echo "flake.lock is up to date."

@@ -5,3 +5,6 @@ dotfiles/.bashrc
 dotfiles/.profile
 dotfiles/.zshrc
 nix/hosts/local/
+
+dotfiles/.claude/*
+!dotfiles/.claude/settings.json

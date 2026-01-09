@@ -88,8 +88,8 @@ apply_nix_config() {
     local flake_ref="./nix#${USER}@$(get_nix_system)"
     local local_host_override="--override-input local-host path:./nix/hosts/local"
     NIX_CONFIG="$nix_config" \
-    nix run $local_host_override "./nix#home-manager" -- \
-        switch --flake "$flake_ref" $local_host_override -b backup
+    nix run --no-write-lock-file $local_host_override "./nix#home-manager" -- \
+        switch --flake "$flake_ref" --no-write-lock-file $local_host_override -b backup
 }
 
 install_desktop_apps() {
@@ -193,12 +193,19 @@ configure_os() {
         "—ฅ/ᐠ. ̫.ᐟ\\\ฅ— if it is lost, pls return this computer to lost@jul.sh"
 }
 
+install_git_hooks() {
+    echo "Installing git hooks..."
+    mkdir -p .git/hooks
+    ln -sf ../../hooks/pre-push .git/hooks/pre-push
+}
+
 main() {
     install_prereqs
     apply_nix_config
     setup_local_rc_files
     install_desktop_apps
     install_cargo_tools
+    install_git_hooks
     configure_os
     echo "✓ Setup complete. Please restart your terminal for changes to take effect."
 }
