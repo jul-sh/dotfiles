@@ -88,7 +88,7 @@ apply_nix_config() {
     local flake_ref="./nix#${USER}@$(get_nix_system)"
     local local_host_override="--override-input local-host path:./nix/hosts/local"
     NIX_CONFIG="$nix_config" \
-    nix run --no-write-lock-file $local_host_override "./nix#home-manager" -- \
+    nix run $local_host_override "./nix#home-manager" -- \
         switch --flake "$flake_ref" $local_host_override -b backup
 }
 
@@ -117,7 +117,7 @@ install_launchdaemon() {
 
 install_cargo_tools() {
     echo "Installing cargo tools..."
-    
+
     # Ensure rustup is configured if installed
     if command -v rustup &>/dev/null; then
         if rustup show | grep -q "no active toolchain"; then
@@ -140,7 +140,7 @@ setup_local_rc_files() {
         local rc="${pair%%:*}"
         local shared="${pair#*:}"
         local target="${HOME}/${rc}"
-        
+
         # Logic to source .ENV (case invariant)
         local env_logic='
 # Source .ENV (case invariant) if it exists
