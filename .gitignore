@@ -7,4 +7,6 @@ dotfiles/.zshrc
 nix/hosts/local/
 
 dotfiles/.claude/*
-!dotfiles/.claude/settings.json
+
+dotfiles/.codex/*
+!dotfiles/.codex/AGENTS.md
