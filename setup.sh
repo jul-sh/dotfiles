@@ -95,12 +95,47 @@ apply_nix_config() {
 install_desktop_apps() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         echo "Installing desktop apps..."
-        brew install --cask --force raycast zed
+        brew install --cask --force zed
+        install_clipkitty
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         command -v zed &>/dev/null || {
             echo "Installing Zed..."
             curl -f https://zed.dev/install.sh | sh
         }
+    fi
+}
+
+install_clipkitty() {
+    local api_url="https://api.github.com/repos/jul-sh/clipkitty/releases/latest"
+    local asset_name="ClipKitty.app.zip"
+    local target_app="/Applications/ClipKitty.app"
+    local tmp_dir
+    local zip_path
+    local download_url
+
+    tmp_dir="$(mktemp -d)"
+    zip_path="${tmp_dir}/${asset_name}"
+
+    download_url="$(curl -fsSL "$api_url" | rg -m1 "\"browser_download_url\": \".*${asset_name}\"" | sed -E 's/.*"browser_download_url": "([^"]+)".*/\1/' || true)"
+    [[ -n "$download_url" ]] || die "ClipKitty release asset not found"
+
+    echo "Installing ClipKitty..."
+    curl -fsSL "$download_url" -o "$zip_path"
+    unzip -q "$zip_path" -d "$tmp_dir"
+
+    sudo rm -rf "$target_app"
+    sudo mv "${tmp_dir}/ClipKitty.app" "$target_app"
+    sudo xattr -dr com.apple.quarantine "$target_app" 2>/dev/null || true
+
+    rm -rf "$tmp_dir"
+}
+
+build_spotlight_scripts() {
+    [[ "$OSTYPE" == "darwin"* ]] || return 0
+    local script="./macos/raycast_scripts/build_spotlight_apps.sh"
+    if [[ -f "$script" ]]; then
+        echo "Building Spotlight apps..."
+        bash "$script"
     fi
 }
 
@@ -204,6 +239,7 @@ main() {
     apply_nix_config
     setup_local_rc_files
     install_desktop_apps
+    build_spotlight_scripts
     install_cargo_tools
     install_git_hooks
     configure_os

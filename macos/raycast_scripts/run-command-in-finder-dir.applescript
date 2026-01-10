@@ -4,7 +4,7 @@
 # @raycast.schemaVersion 1
 # @raycast.title Run Command in Finder Directory
 # @raycast.mode silent
-# @raycast.argument1 { "type": "text", "placeholder": "Command (e.g., zed .)" }
+# @raycast.argument1 { "type": "text", "placeholder": "Command (e.g., zed .)", "default": "zed ." }
 #
 # Optional parameters:
 # @raycast.icon 🦞
