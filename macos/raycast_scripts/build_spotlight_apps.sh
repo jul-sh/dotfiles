@@ -23,7 +23,7 @@ mkdir -p "$TARGET_DIR"
 
 shopt -s nullglob
 for script_path in "$SOURCE_DIR"/*.applescript; do
-  title="$(rg -m1 '^# @raycast.title' "$script_path" | sed -E 's/^# @raycast.title[[:space:]]*//' || true)"
+  title="$(grep -m1 '^# @raycast.title' "$script_path" | sed -E 's/^# @raycast.title[[:space:]]*//' || true)"
   if [[ -z "$title" ]]; then
     title="$(basename "$script_path" .applescript)"
   fi
@@ -36,9 +36,9 @@ for script_path in "$SOURCE_DIR"/*.applescript; do
     continue
   fi
 
-  placeholder="$(rg -m1 '^# @raycast.argument1' "$script_path" | sed -nE 's/.*"placeholder":[[:space:]]*"([^"]+)".*/\1/p' || true)"
-  default_value="$(rg -m1 '^# @raycast.argument1' "$script_path" | sed -nE 's/.*"default":[[:space:]]*"([^"]+)".*/\1/p' || true)"
-  if rg -q '^# @raycast.argument1' "$script_path"; then
+  placeholder="$(grep -m1 '^# @raycast.argument1' "$script_path" | sed -nE 's/.*"placeholder":[[:space:]]*"([^"]+)".*/\1/p' || true)"
+  default_value="$(grep -m1 '^# @raycast.argument1' "$script_path" | sed -nE 's/.*"default":[[:space:]]*"([^"]+)".*/\1/p' || true)"
+  if grep -q '^# @raycast.argument1' "$script_path"; then
     prompt_text="${placeholder:-Enter argument}"
     default_answer="${default_value:-}"
     script_path_escaped="$(escape_applescript_string "$script_path")"

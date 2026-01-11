@@ -2,10 +2,8 @@
 #
 # Bootstrapper for a new development environment.
 #
-# 1. Installs prerequisites (Homebrew, Nix)
-# 2. Applies Nix Home Manager configuration
-# 3. Installs GUI applications
-# 4. Configures OS-level settings
+# Phase 1: Install prerequisites (Homebrew, Nix) - runs in host shell
+# Phase 2: Everything else runs inside `nix develop` for reproducibility
 
 set -euo pipefail
 
@@ -29,6 +27,50 @@ get_nix_system() {
     echo "${arch}-${os}"
 }
 
+source_nix_profile() {
+    for p in "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" \
+             "$HOME/.nix-profile/etc/profile.d/nix.sh"; do
+        [[ -f "$p" ]] && { . "$p"; return 0; }
+    done
+    die "Nix profile not found. Restart terminal and re-run."
+}
+
+# =============================================================================
+# PHASE 1: Bootstrap (runs in host shell, minimal dependencies)
+# =============================================================================
+
+install_nix() {
+    echo "Installing Nix..."
+    curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm \
+        || curl -L https://nixos.org/nix/install | sh -s -- --no-daemon \
+        || die "Nix installation failed"
+    source_nix_profile
+}
+
+install_homebrew() {
+    [[ "$OSTYPE" == "darwin"* ]] || return 0
+    command -v brew &>/dev/null || {
+        echo "Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    }
+}
+
+bootstrap() {
+    # Install Homebrew (macOS only, needed for casks)
+    install_homebrew
+
+    # Install Nix if not present
+    command -v nix &>/dev/null || install_nix
+
+    # Re-exec inside nix develop for the rest of setup
+    echo "Entering Nix environment..."
+    exec nix develop ./nix --command bash -c "IN_NIX_SHELL=1 $0"
+}
+
+# =============================================================================
+# PHASE 2: Main setup (runs inside nix develop with all tools available)
+# =============================================================================
+
 ensure_local_host_flake() {
     mkdir -p nix/hosts/local
     cat > nix/hosts/local/flake.nix <<EOF
@@ -43,47 +85,9 @@ ensure_local_host_flake() {
 EOF
 }
 
-source_nix_profile() {
-    for p in "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" \
-             "$HOME/.nix-profile/etc/profile.d/nix.sh"; do
-        [[ -f "$p" ]] && { . "$p"; return 0; }
-    done
-    die "Nix profile not found. Restart terminal and re-run."
-}
-
-install_nix() {
-    echo "Installing Nix..."
-    curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm \
-        || curl -L https://nixos.org/nix/install | sh -s -- --no-daemon \
-        || die "Nix installation failed"
-    source_nix_profile
-}
-
-# --- Setup Steps ---
-install_prereqs() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        command -v brew &>/dev/null || {
-            echo "Installing Homebrew..."
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        }
-    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        if ! command -v git &>/dev/null || ! command -v curl &>/dev/null; then
-            command -v apt-get &>/dev/null && {
-                echo "Installing git and curl..."
-                sudo apt-get update && sudo apt-get install -y git curl
-            }
-        fi
-    else
-        die "Unsupported OS: $OSTYPE"
-    fi
-
-    command -v nix &>/dev/null || install_nix
-}
-
 apply_nix_config() {
     echo "Applying Home Manager configuration..."
     ensure_local_host_flake
-    # Override flaky substituters from system Nix config to stick to cache.nixos.org
     local nix_config=$'experimental-features = nix-command flakes\nsubstituters = https://cache.nixos.org/\ntrusted-substituters = https://cache.nixos.org/\n'
     local flake_ref="./nix#${USER}@$(get_nix_system)"
     local local_host_override="--override-input local-host path:./nix/hosts/local"
@@ -95,7 +99,7 @@ apply_nix_config() {
 install_desktop_apps() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         echo "Installing desktop apps..."
-        brew install --cask --force zed
+        brew install --cask --force wezterm zed
         install_clipkitty
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         command -v zed &>/dev/null || {
@@ -116,7 +120,7 @@ install_clipkitty() {
     tmp_dir="$(mktemp -d)"
     zip_path="${tmp_dir}/${asset_name}"
 
-    download_url="$(curl -fsSL "$api_url" | rg -m1 "\"browser_download_url\": \".*${asset_name}\"" | sed -E 's/.*"browser_download_url": "([^"]+)".*/\1/' || true)"
+    download_url="$(curl -fsSL "$api_url" | grep -o "\"browser_download_url\": \"[^\"]*${asset_name}\"" | head -1 | sed -E 's/.*"browser_download_url": "([^"]+)".*/\1/' || true)"
     [[ -n "$download_url" ]] || die "ClipKitty release asset not found"
 
     echo "Installing ClipKitty..."
@@ -139,6 +143,30 @@ build_spotlight_scripts() {
     fi
 }
 
+install_fonts() {
+    echo "Installing fonts..."
+    local fonts_dir="./fonts"
+    local target_dir
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        target_dir="$HOME/Library/Fonts"
+    else
+        target_dir="$HOME/.local/share/fonts"
+    fi
+
+    mkdir -p "$target_dir"
+    find "$fonts_dir" -name "*.ttf" -o -name "*.otf" | while read -r font; do
+        local font_name
+        font_name="$(basename "$font")"
+        cp -f "$font" "$target_dir/$font_name"
+    done
+
+    # Update font cache on Linux
+    if [[ "$OSTYPE" == "linux-gnu"* ]] && command -v fc-cache &>/dev/null; then
+        fc-cache -f
+    fi
+}
+
 install_launchdaemon() {
     local script_src="$1" script_dst="$2" plist_src="$3" plist_dst="$4"
     cmp -s "$script_src" "$script_dst" && cmp -s "$plist_src" "$plist_dst" && return 0
@@ -152,20 +180,12 @@ install_launchdaemon() {
 
 install_cargo_tools() {
     echo "Installing cargo tools..."
-
-    # Ensure rustup is configured if installed
     if command -v rustup &>/dev/null; then
         if rustup show | grep -q "no active toolchain"; then
             echo "Setting rustup default toolchain to nightly..."
             rustup default nightly
         fi
     fi
-
-    # Ensure rustup/cargo is available (installed via Nix)
-    # cargo tools are now managed via Nix (fresh-editor) or are not yet installed
-    # if command -v cargo &>/dev/null; then
-    #     cargo install ...
-    # fi
 }
 
 setup_local_rc_files() {
@@ -176,7 +196,6 @@ setup_local_rc_files() {
         local shared="${pair#*:}"
         local target="${HOME}/${rc}"
 
-        # Logic to source .ENV (case invariant)
         local env_logic='
 # Source .ENV (case invariant) if it exists
 if command -v find >/dev/null 2>&1; then
@@ -234,16 +253,26 @@ install_git_hooks() {
     ln -sf ../../hooks/pre-push .git/hooks/pre-push
 }
 
-main() {
-    install_prereqs
+run_setup() {
     apply_nix_config
     setup_local_rc_files
     install_desktop_apps
     build_spotlight_scripts
+    install_fonts
     install_cargo_tools
     install_git_hooks
+    echo "Configuring OS settings (requires sudo)..."
+    sudo -v
     configure_os
     echo "✓ Setup complete. Please restart your terminal for changes to take effect."
 }
 
-main
+# =============================================================================
+# Entry point
+# =============================================================================
+
+if [[ "${IN_NIX_SHELL:-}" == "1" ]]; then
+    run_setup
+else
+    bootstrap
+fi

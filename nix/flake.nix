@@ -102,5 +102,22 @@
           program = "${home-manager.packages.${system}.home-manager}/bin/home-manager";
         };
       });
+
+      # Dev shell with tools needed for setup scripts
+      devShells = forAllSystems (system:
+        let pkgs = nixpkgs.legacyPackages.${system};
+        in {
+          default = pkgs.mkShell {
+            packages = with pkgs; [
+              coreutils
+              gnugrep
+              gnused
+              findutils
+              bash
+              curl
+              unzip
+            ];
+          };
+        });
     };
 }
