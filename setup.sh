@@ -2,7 +2,7 @@
 #
 # Bootstrapper for a new development environment.
 #
-# Phase 1: Install prerequisites (Homebrew, Nix) - runs in host shell
+# Phase 1: Install Nix and enter nix develop shell
 # Phase 2: Everything else runs inside `nix develop` for reproducibility
 
 set -euo pipefail
@@ -36,35 +36,17 @@ source_nix_profile() {
 }
 
 # =============================================================================
-# PHASE 1: Bootstrap (runs in host shell, minimal dependencies)
+# PHASE 1: Install Nix (runs in host shell)
 # =============================================================================
 
 install_nix() {
+    command -v nix &>/dev/null && return 0
+
     echo "Installing Nix..."
     curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm \
         || curl -L https://nixos.org/nix/install | sh -s -- --no-daemon \
         || die "Nix installation failed"
     source_nix_profile
-}
-
-install_homebrew() {
-    [[ "$OSTYPE" == "darwin"* ]] || return 0
-    command -v brew &>/dev/null || {
-        echo "Installing Homebrew..."
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    }
-}
-
-bootstrap() {
-    # Install Homebrew (macOS only, needed for casks)
-    install_homebrew
-
-    # Install Nix if not present
-    command -v nix &>/dev/null || install_nix
-
-    # Re-exec inside nix develop for the rest of setup
-    echo "Entering Nix environment..."
-    exec nix develop ./nix --command bash -c "IN_NIX_SHELL=1 $0"
 }
 
 # =============================================================================
@@ -94,6 +76,14 @@ apply_nix_config() {
     NIX_CONFIG="$nix_config" \
     nix run --no-write-lock-file $local_host_override "./nix#home-manager" -- \
         switch --flake "$flake_ref" --no-write-lock-file $local_host_override -b backup
+}
+
+install_homebrew() {
+    [[ "$OSTYPE" == "darwin"* ]] || return 0
+    command -v brew &>/dev/null || {
+        echo "Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    }
 }
 
 install_desktop_apps() {
@@ -256,6 +246,7 @@ install_git_hooks() {
 run_setup() {
     apply_nix_config
     setup_local_rc_files
+    install_homebrew
     install_desktop_apps
     build_spotlight_scripts
     install_fonts
@@ -274,5 +265,7 @@ run_setup() {
 if [[ "${IN_NIX_SHELL:-}" == "1" ]]; then
     run_setup
 else
-    bootstrap
+    install_nix
+    echo "Entering Nix environment..."
+    exec nix develop ./nix --command bash -c "IN_NIX_SHELL=1 $0"
 fi
