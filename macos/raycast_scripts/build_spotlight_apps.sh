@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET_DIR="/Users/julsh/Applications/Spotlight Scripts"
+TARGET_DIR="${HOME}/Applications/Spotlight Scripts"
 
 escape_applescript_string() {
   local s="$1"
