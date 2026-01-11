@@ -2,7 +2,7 @@
 
 # Required parameters:
 # @raycast.schemaVersion 1
-# @raycast.title Open Current Terminal Directory in Finder
+# @raycast.title Open Current WezTerm Directory in Finder
 # @raycast.mode silent
 # @raycast.packageName Navigation
 #
@@ -10,15 +10,13 @@
 # @raycast.icon 📇
 #
 # Documentation:
-# @raycast.description Open current Terminal directory in Finder
-# @raycast.author Kirill Gorbachyonok
+# @raycast.description Open current WezTerm directory in Finder
+# @raycast.author Kirill Gorbachyonok (modified)
 # @raycast.authorURL https://github.com/japanese-goblinn
 
-tell application "Terminal"
-    if not (exists window 1) then reopen
-        activate
-    if busy of window 1 then
-        tell application "System Events" to keystroke "t" using command down
-    end if
-    do script "open -a Finder ./" in window 1
-end tell
+# Get the cwd of the active WezTerm pane using wezterm cli
+set paneInfo to do shell script "/bin/zsh -l -c 'wezterm cli list --format json'"
+set cwd to do shell script "echo " & quoted form of paneInfo & " | /bin/zsh -l -c 'jq -r \".[0].cwd\"'"
+
+# Open Finder at that path
+do shell script "open " & quoted form of cwd

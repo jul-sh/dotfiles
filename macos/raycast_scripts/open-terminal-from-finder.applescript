@@ -2,7 +2,7 @@
 
 # Required parameters:
 # @raycast.schemaVersion 1
-# @raycast.title Open Current Finder Directory in Terminal
+# @raycast.title Open Current Finder Directory in WezTerm
 # @raycast.mode silent
 # @raycast.packageName Navigation
 #
@@ -10,17 +10,13 @@
 # @raycast.icon 📟
 #
 # Documentation:
-# @raycast.description Open current Finder directory in Terminal
-# @raycast.author Kirill Gorbachyonok
+# @raycast.description Open current Finder directory in WezTerm
+# @raycast.author Kirill Gorbachyonok (modified)
 # @raycast.authorURL https://github.com/japanese-goblinn
 
 tell application "Finder"
     set myWin to window 1
-    set thePath to (quoted form of POSIX path of (target of myWin as alias))
-    tell application "Terminal"
-        activate
-        tell window 1
-            do script "cd " & thePath
-        end tell
-    end tell
+    set thePath to POSIX path of (target of myWin as alias)
 end tell
+
+do shell script "/bin/zsh -l -c 'wezterm start --cwd " & quoted form of thePath & "'"

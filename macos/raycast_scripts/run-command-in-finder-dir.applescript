@@ -50,8 +50,6 @@ on run argv
 	# Construct the shell command to change directory and then execute the user's command
 	set shellCmd to "cd " & posixPath & " && " & theCommand
 
-	# Execute the combined shell command silently
-	# Note: Ensure the command is available in the standard shell PATH
-	# or provide the full path to the command executable.
-	do shell script shellCmd
+	# Execute through a login shell to get the user's PATH
+	do shell script "/bin/zsh -l -c " & quoted form of shellCmd
 end run
