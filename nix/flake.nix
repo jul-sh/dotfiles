@@ -115,6 +115,7 @@
               findutils
               bash
               curl
+              jq
               unzip
             ];
           };
