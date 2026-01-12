@@ -19,5 +19,10 @@
     "version": "pre-b3162d9da3c6c56995cbc764ff8d6fe025b6af9b",
     "url": "https://github.com/jul-sh/iosevka-charon/releases/download/pre-b3162d9da3c6c56995cbc764ff8d6fe025b6af9b/iosevka-charon.zip",
     "sha256": "d5edb8cf50f9fe3f1ceef08f27498e070cc77deef92c0e52756fc2d399367dc6"
+  },
+  "clipkitty": {
+    "version": "commit-49077889a4b31b66be00206b262b2afb89fc9d50",
+    "url": "https://github.com/jul-sh/clipkitty/releases/download/commit-49077889a4b31b66be00206b262b2afb89fc9d50/ClipKitty.app.zip",
+    "sha256": "ca8fb4efbb93f3ddb5a244711381c42ddafafcfe9e8189fb2aceb9d548f4798d"
   }
 }

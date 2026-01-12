@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-LOCKFILE="apps.lock.json"
+LOCKFILE="external.lock.json"
 
 get_arch() {
     case "$(uname -m)" in
@@ -78,8 +78,27 @@ fetch_iosevka_charon_latest() {
         '{version: $v, url: $u, sha256: $s}'
 }
 
+fetch_clipkitty_latest() {
+    local api_url="https://api.github.com/repos/jul-sh/clipkitty/releases/latest"
+    local release
+    release=$(curl -fsSL "$api_url")
+
+    local version
+    version=$(echo "$release" | jq -r '.tag_name')
+
+    local url
+    url=$(echo "$release" | jq -r '.assets[] | select(.name == "ClipKitty.app.zip") | .browser_download_url')
+
+    echo "  Fetching ClipKitty hash..." >&2
+    local sha256
+    sha256=$(curl -fsSL "$url" | shasum -a 256 | awk '{print $1}')
+
+    jq -n --arg v "$version" --arg u "$url" --arg s "$sha256" \
+        '{version: $v, url: $u, sha256: $s}'
+}
+
 update_apps() {
-    echo "Updating apps.lock.json..."
+    echo "Updating external.lock.json..."
 
     echo "Fetching WezTerm latest..."
     local wezterm
@@ -93,8 +112,12 @@ update_apps() {
     local iosevka_charon
     iosevka_charon=$(fetch_iosevka_charon_latest)
 
-    jq -n --argjson w "$wezterm" --argjson z "$zed" --argjson i "$iosevka_charon" \
-        '{wezterm: $w, zed: $z, "iosevka-charon": $i}' > "$LOCKFILE"
+    echo "Fetching ClipKitty latest..."
+    local clipkitty
+    clipkitty=$(fetch_clipkitty_latest)
+
+    jq -n --argjson w "$wezterm" --argjson z "$zed" --argjson i "$iosevka_charon" --argjson c "$clipkitty" \
+        '{wezterm: $w, zed: $z, "iosevka-charon": $i, clipkitty: $c}' > "$LOCKFILE"
 
     echo "Updated $LOCKFILE"
 }

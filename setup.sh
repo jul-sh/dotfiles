@@ -79,7 +79,7 @@ apply_nix_config() {
 }
 
 check_app_updates() {
-    local lockfile="./apps.lock.json"
+    local lockfile="./external.lock.json"
 
     local locked_wezterm
     locked_wezterm=$(jq -r '.wezterm.version' "$lockfile")
@@ -154,7 +154,7 @@ install_app_from_dmg() {
 }
 
 install_desktop_apps() {
-    local lockfile="./apps.lock.json"
+    local lockfile="./external.lock.json"
 
     if [[ "$OSTYPE" == "darwin"* ]]; then
         echo "Installing desktop apps..."
@@ -186,28 +186,12 @@ install_desktop_apps() {
 }
 
 install_clipkitty() {
-    local api_url="https://api.github.com/repos/jul-sh/clipkitty/releases/latest"
-    local asset_name="ClipKitty.app.zip"
-    local target_app="/Applications/ClipKitty.app"
-    local tmp_dir
-    local zip_path
-    local download_url
-
-    tmp_dir="$(mktemp -d)"
-    zip_path="${tmp_dir}/${asset_name}"
-
-    download_url="$(curl -fsSL "$api_url" | grep -o "\"browser_download_url\": \"[^\"]*${asset_name}\"" | head -1 | sed -E 's/.*"browser_download_url": "([^"]+)".*/\1/' || true)"
-    [[ -n "$download_url" ]] || die "ClipKitty release asset not found"
-
-    echo "Installing ClipKitty..."
-    curl -fsSL "$download_url" -o "$zip_path"
-    unzip -q "$zip_path" -d "$tmp_dir"
-
-    sudo rm -rf "$target_app"
-    sudo mv "${tmp_dir}/ClipKitty.app" "$target_app"
-    sudo xattr -dr com.apple.quarantine "$target_app" 2>/dev/null || true
-
-    rm -rf "$tmp_dir"
+    local lockfile="./external.lock.json"
+    local url sha256
+    url=$(jq -r '.clipkitty.url' "$lockfile")
+    sha256=$(jq -r '.clipkitty.sha256' "$lockfile")
+    echo "  Installing ClipKitty..."
+    install_app_from_zip "$url" "$sha256" "ClipKitty"
 }
 
 build_spotlight_scripts() {
@@ -221,7 +205,7 @@ build_spotlight_scripts() {
 
 install_fonts() {
     echo "Installing fonts..."
-    local lockfile="./apps.lock.json"
+    local lockfile="./external.lock.json"
     local target_dir
 
     if [[ "$OSTYPE" == "darwin"* ]]; then
