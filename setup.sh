@@ -114,7 +114,13 @@ install_app_from_zip() {
 
     unzip -q "$zip_path" -d "$tmp_dir"
     local app_bundle
-    app_bundle=$(find "$tmp_dir" -maxdepth 1 -name "*.app" | head -1)
+    app_bundle=$(find "$tmp_dir" -name "*.app" -type d | head -1)
+    if [[ -z "$app_bundle" ]]; then
+        echo "Contents of extracted zip:"
+        ls -la "$tmp_dir"
+        rm -rf "$tmp_dir"
+        die "No .app bundle found in $app_name zip file"
+    fi
     sudo rm -rf "/Applications/${app_name}.app"
     sudo mv "$app_bundle" "/Applications/${app_name}.app"
     sudo xattr -dr com.apple.quarantine "/Applications/${app_name}.app" 2>/dev/null || true
@@ -215,7 +221,7 @@ build_spotlight_scripts() {
 
 install_fonts() {
     echo "Installing fonts..."
-    local fonts_dir="./fonts"
+    local lockfile="./apps.lock.json"
     local target_dir
 
     if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -224,12 +230,27 @@ install_fonts() {
         target_dir="$HOME/.local/share/fonts"
     fi
 
+    local url sha256 tmp_dir zip_path actual_sha256
+    url=$(jq -r '.["iosevka-charon"].url' "$lockfile")
+    sha256=$(jq -r '.["iosevka-charon"].sha256' "$lockfile")
+
+    tmp_dir="$(mktemp -d)"
+    zip_path="${tmp_dir}/fonts.zip"
+
+    curl -fsSL "$url" -o "$zip_path"
+    actual_sha256=$(shasum -a 256 "$zip_path" | awk '{print $1}')
+    if [[ "$actual_sha256" != "$sha256" ]]; then
+        rm -rf "$tmp_dir"
+        die "SHA256 mismatch for iosevka-charon: expected $sha256, got $actual_sha256"
+    fi
+
+    unzip -q "$zip_path" -d "$tmp_dir"
     mkdir -p "$target_dir"
-    find "$fonts_dir" -name "*.ttf" -o -name "*.otf" | while read -r font; do
-        local font_name
-        font_name="$(basename "$font")"
-        cp -f "$font" "$target_dir/$font_name"
+    find "$tmp_dir" -name "*.ttf" -o -name "*.otf" | while read -r font; do
+        cp -f "$font" "$target_dir/$(basename "$font")"
     done
+
+    rm -rf "$tmp_dir"
 
     # Update font cache on Linux
     if [[ "$OSTYPE" == "linux-gnu"* ]] && command -v fc-cache &>/dev/null; then

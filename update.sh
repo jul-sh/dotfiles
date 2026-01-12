@@ -59,6 +59,25 @@ fetch_zed_latest() {
     echo "$result"
 }
 
+fetch_iosevka_charon_latest() {
+    local api_url="https://api.github.com/repos/jul-sh/iosevka-charon/releases"
+    local release
+    release=$(curl -fsSL "$api_url" | jq '.[0]')
+
+    local version
+    version=$(echo "$release" | jq -r '.tag_name')
+
+    local url
+    url=$(echo "$release" | jq -r '.assets[] | select(.name == "iosevka-charon.zip") | .browser_download_url')
+
+    echo "  Fetching iosevka-charon hash..." >&2
+    local sha256
+    sha256=$(curl -fsSL "$url" | shasum -a 256 | awk '{print $1}')
+
+    jq -n --arg v "$version" --arg u "$url" --arg s "$sha256" \
+        '{version: $v, url: $u, sha256: $s}'
+}
+
 update_apps() {
     echo "Updating apps.lock.json..."
 
@@ -70,8 +89,12 @@ update_apps() {
     local zed
     zed=$(fetch_zed_latest)
 
-    jq -n --argjson w "$wezterm" --argjson z "$zed" \
-        '{wezterm: $w, zed: $z}' > "$LOCKFILE"
+    echo "Fetching iosevka-charon latest..."
+    local iosevka_charon
+    iosevka_charon=$(fetch_iosevka_charon_latest)
+
+    jq -n --argjson w "$wezterm" --argjson z "$zed" --argjson i "$iosevka_charon" \
+        '{wezterm: $w, zed: $z, "iosevka-charon": $i}' > "$LOCKFILE"
 
     echo "Updated $LOCKFILE"
 }

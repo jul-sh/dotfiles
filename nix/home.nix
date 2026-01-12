@@ -45,13 +45,7 @@
         source ${inputs.zsh-syntax-highlighting}/zsh-syntax-highlighting.plugin.zsh
         source ${inputs.zsh-autocomplete}/zsh-autocomplete.plugin.zsh
       '';
-    } // (if pkgs.stdenv.isDarwin then {
-      "Library/Fonts/managed-by-nix".source = ../fonts;
-      "Library/Fonts/managed-by-nix".recursive = true;
-    } else {
-      ".local/share/fonts/managed-by-nix".source = ../fonts;
-      ".local/share/fonts/managed-by-nix".recursive = true;
-    });
+    };
 
   # --- Files in .config (XDG_CONFIG_HOME) ---
   # Automatically link all files and directories from dotfiles/.config
