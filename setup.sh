@@ -266,6 +266,7 @@ if [[ "${IN_NIX_SHELL:-}" == "1" ]]; then
     run_setup
 else
     install_nix
+    SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
     echo "Entering Nix environment..."
-    exec nix develop ./nix --command bash -c "IN_NIX_SHELL=1 $0"
+    exec nix develop ./nix --command bash -c "IN_NIX_SHELL=1 bash '$SCRIPT_PATH'"
 fi
