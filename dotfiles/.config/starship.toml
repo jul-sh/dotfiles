@@ -40,3 +40,6 @@ disabled = true
 
 [package]
 disabled = true
+
+[git_status]
+format = '[git:$all_status$ahead_behind](dimmed) '
