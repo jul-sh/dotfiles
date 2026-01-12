@@ -1,0 +1,18 @@
+{
+  "wezterm": {
+    "version": "20240203-110809-5046fc22",
+    "url": "https://github.com/wezterm/wezterm/releases/download/20240203-110809-5046fc22/WezTerm-macos-20240203-110809-5046fc22.zip",
+    "sha256": "e77388cad55f2e9da95a220a89206a6c58f865874a629b7c3ea3c162f5692224"
+  },
+  "zed": {
+    "version": "v0.218.6",
+    "aarch64": {
+      "url": "https://github.com/zed-industries/zed/releases/download/v0.218.6/Zed-aarch64.dmg",
+      "sha256": "6039b41b0c847e6f1075d8c443773e74940e59420c921cf5f476b7a85ccecbf3"
+    },
+    "x86_64": {
+      "url": "https://github.com/zed-industries/zed/releases/download/v0.218.6/Zed-x86_64.dmg",
+      "sha256": "0f6bd84ab0c11ac123ea8ca78c98c529fe49ddb37b9a255e8fab5d53d9bdabeb"
+    }
+  }
+}

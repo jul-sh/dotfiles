@@ -78,18 +78,98 @@ apply_nix_config() {
         switch --flake "$flake_ref" --no-write-lock-file $local_host_override -b backup
 }
 
-install_homebrew() {
-    [[ "$OSTYPE" == "darwin"* ]] || return 0
-    command -v brew &>/dev/null || {
-        echo "Installing Homebrew..."
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    }
+check_app_updates() {
+    local lockfile="./apps.lock.json"
+
+    local locked_wezterm
+    locked_wezterm=$(jq -r '.wezterm.version' "$lockfile")
+    local latest_wezterm
+    latest_wezterm=$(curl -fsSL "https://api.github.com/repos/wez/wezterm/releases/latest" 2>/dev/null | jq -r '.tag_name' || echo "$locked_wezterm")
+    if [[ "$latest_wezterm" != "$locked_wezterm" ]]; then
+        echo "warning: WezTerm $latest_wezterm available (locked: $locked_wezterm). Run ./update.sh to update."
+    fi
+
+    local locked_zed
+    locked_zed=$(jq -r '.zed.version' "$lockfile")
+    local latest_zed
+    latest_zed=$(curl -fsSL "https://api.github.com/repos/zed-industries/zed/releases/latest" 2>/dev/null | jq -r '.tag_name' || echo "$locked_zed")
+    if [[ "$latest_zed" != "$locked_zed" ]]; then
+        echo "warning: Zed $latest_zed available (locked: $locked_zed). Run ./update.sh to update."
+    fi
+}
+
+install_app_from_zip() {
+    local url="$1" expected_sha256="$2" app_name="$3"
+    local tmp_dir zip_path actual_sha256
+
+    tmp_dir="$(mktemp -d)"
+    zip_path="${tmp_dir}/app.zip"
+
+    curl -fsSL "$url" -o "$zip_path"
+    actual_sha256=$(shasum -a 256 "$zip_path" | awk '{print $1}')
+    if [[ "$actual_sha256" != "$expected_sha256" ]]; then
+        rm -rf "$tmp_dir"
+        die "SHA256 mismatch for $app_name: expected $expected_sha256, got $actual_sha256"
+    fi
+
+    unzip -q "$zip_path" -d "$tmp_dir"
+    local app_bundle
+    app_bundle=$(find "$tmp_dir" -maxdepth 1 -name "*.app" | head -1)
+    sudo rm -rf "/Applications/${app_name}.app"
+    sudo mv "$app_bundle" "/Applications/${app_name}.app"
+    sudo xattr -dr com.apple.quarantine "/Applications/${app_name}.app" 2>/dev/null || true
+
+    rm -rf "$tmp_dir"
+}
+
+install_app_from_dmg() {
+    local url="$1" expected_sha256="$2" app_name="$3"
+    local tmp_dir dmg_path actual_sha256 mount_point
+
+    tmp_dir="$(mktemp -d)"
+    dmg_path="${tmp_dir}/app.dmg"
+
+    curl -fsSL "$url" -o "$dmg_path"
+    actual_sha256=$(shasum -a 256 "$dmg_path" | awk '{print $1}')
+    if [[ "$actual_sha256" != "$expected_sha256" ]]; then
+        rm -rf "$tmp_dir"
+        die "SHA256 mismatch for $app_name: expected $expected_sha256, got $actual_sha256"
+    fi
+
+    mount_point=$(hdiutil attach -nobrowse -readonly "$dmg_path" 2>/dev/null | grep -o '/Volumes/.*' | head -1)
+    local app_bundle
+    app_bundle=$(find "$mount_point" -maxdepth 1 -name "*.app" | head -1)
+    sudo rm -rf "/Applications/${app_name}.app"
+    sudo cp -R "$app_bundle" "/Applications/${app_name}.app"
+    sudo xattr -dr com.apple.quarantine "/Applications/${app_name}.app" 2>/dev/null || true
+    hdiutil detach "$mount_point" -quiet
+
+    rm -rf "$tmp_dir"
 }
 
 install_desktop_apps() {
+    local lockfile="./apps.lock.json"
+
     if [[ "$OSTYPE" == "darwin"* ]]; then
         echo "Installing desktop apps..."
-        brew install --cask --force wezterm zed
+        check_app_updates
+
+        local arch
+        arch=$(uname -m)
+        [[ "$arch" == "arm64" ]] && arch="aarch64"
+
+        local wezterm_url wezterm_sha256
+        wezterm_url=$(jq -r '.wezterm.url' "$lockfile")
+        wezterm_sha256=$(jq -r '.wezterm.sha256' "$lockfile")
+        echo "  Installing WezTerm..."
+        install_app_from_zip "$wezterm_url" "$wezterm_sha256" "WezTerm"
+
+        local zed_url zed_sha256
+        zed_url=$(jq -r ".zed.${arch}.url" "$lockfile")
+        zed_sha256=$(jq -r ".zed.${arch}.sha256" "$lockfile")
+        echo "  Installing Zed..."
+        install_app_from_dmg "$zed_url" "$zed_sha256" "Zed"
+
         install_clipkitty
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         command -v zed &>/dev/null || {
@@ -246,7 +326,6 @@ install_git_hooks() {
 run_setup() {
     apply_nix_config
     setup_local_rc_files
-    install_homebrew
     install_desktop_apps
     build_spotlight_scripts
     install_fonts
