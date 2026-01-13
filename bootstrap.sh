@@ -1,8 +1,8 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Idempotent entrypoint to install/update jul-sh/dotfiles.
 # - Ensures the checkout exists and points at the expected origin.
 # - Fast-forwards to the current branch (or origin HEAD) and runs setup.
-set -euo pipefail
+set -eu
 
 REPO_URL="${REPO_URL:-https://github.com/jul-sh/dotfiles.git}"
 CHECKOUT_DIR="${CHECKOUT_DIR:-$HOME/git/dotfiles}"
@@ -22,7 +22,8 @@ ensure_checkout_dir() {
 update_existing_repo() {
     [ -d "$CHECKOUT_DIR/.git" ] || return 1
 
-    local origin current_branch default_branch ref
+    # [POSIX] local origin current_branch default_branch ref
+    origin="" current_branch="" default_branch="" ref=""
     origin="$(git -C "$CHECKOUT_DIR" remote get-url origin 2>/dev/null || true)"
     [ "$origin" = "$REPO_URL" ] || die "existing $CHECKOUT_DIR origin is '$origin', expected '$REPO_URL'"
 
@@ -43,7 +44,7 @@ update_existing_repo() {
         echo "How would you like to proceed?"
         echo " [r] Reset to upstream (WARNING: deletes all local changes)"
         echo " [m] Manual resolution (exit script)"
-        echo -n "Option [r/M]: "
+        printf "Option [r/M]: "
         read -r choice < /dev/tty || true
         case "$choice" in
             r|R)
