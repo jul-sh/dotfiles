@@ -82,6 +82,38 @@ quit_app_if_running() {
     fi
 }
 
+finalize_app_install() {
+    local source_bundle="$1" app_name="$2"
+    echo "  Finalizing $app_name installation..."
+    sudo rm -rf "/Applications/${app_name}.app"
+    sudo mv "$source_bundle" "/Applications/${app_name}.app"
+    sudo xattr -dr com.apple.quarantine "/Applications/${app_name}.app" 2>/dev/null || true
+}
+
+install_app_logic() {
+    local new_bundle="$1" app_name="$2"
+
+    if pgrep -x "$app_name" >/dev/null; then
+        local staging_dir="$HOME/.local/share/clipkitty/update_staging"
+        mkdir -p "$staging_dir"
+        local staged_bundle="${staging_dir}/${app_name}.app"
+
+        echo "  $app_name is currently running. Update scheduled for when it closes."
+        rm -rf "$staged_bundle"
+        mv "$new_bundle" "$staged_bundle"
+
+        # Spawn background waiter
+        (
+            while pgrep -x "$app_name" >/dev/null; do
+                sleep 5
+            done
+            finalize_app_install "$staged_bundle" "$app_name"
+        ) & disown
+    else
+        finalize_app_install "$new_bundle" "$app_name"
+    fi
+}
+
 install_app_from_zip() {
     local url="$1" expected_sha256="$2" app_name="$3"
     local tmp_dir zip_path actual_sha256
@@ -105,10 +137,8 @@ install_app_from_zip() {
         rm -rf "$tmp_dir"
         die "No .app bundle found in $app_name zip file"
     fi
-    quit_app_if_running "$app_name"
-    sudo rm -rf "/Applications/${app_name}.app"
-    sudo mv "$app_bundle" "/Applications/${app_name}.app"
-    sudo xattr -dr com.apple.quarantine "/Applications/${app_name}.app" 2>/dev/null || true
+
+    install_app_logic "$app_bundle" "$app_name"
 
     rm -rf "$tmp_dir"
 }
@@ -130,11 +160,13 @@ install_app_from_dmg() {
     mount_point=$(hdiutil attach -nobrowse -readonly "$dmg_path" 2>/dev/null | grep -o '/Volumes/.*' | head -1)
     local app_bundle
     app_bundle=$(find "$mount_point" -maxdepth 1 -name "*.app" | head -1)
-    quit_app_if_running "$app_name"
-    sudo rm -rf "/Applications/${app_name}.app"
-    sudo cp -R "$app_bundle" "/Applications/${app_name}.app"
-    sudo xattr -dr com.apple.quarantine "/Applications/${app_name}.app" 2>/dev/null || true
+
+    # Copy from read-only mount to a writable temp location before handing off to logic
+    local writable_bundle="${tmp_dir}/staged_${app_name}.app"
+    cp -R "$app_bundle" "$writable_bundle"
     hdiutil detach "$mount_point" -quiet
+
+    install_app_logic "$writable_bundle" "$app_name"
 
     rm -rf "$tmp_dir"
 }
