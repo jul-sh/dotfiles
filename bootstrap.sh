@@ -76,8 +76,17 @@ main() {
     ensure_checkout_dir
     ensure_repo
     cd "$CHECKOUT_DIR"
-    sh ./nix/install.sh
-    sh ./setup.sh
+
+    if ! command -v nix >/dev/null 2>&1; then
+        sh ./nix/install.sh
+    fi
+
+    if [ "${IN_NIX_SHELL:-}" = "1" ]; then
+        bash ./nix/setup-internal.sh
+    else
+        echo "Entering Nix environment..."
+        exec nix develop ./nix --command bash -c "IN_NIX_SHELL=1 bash ./nix/setup-internal.sh"
+    fi
 }
 
 main "$@"

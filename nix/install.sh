@@ -23,9 +23,9 @@ install_nix() {
 
     echo "Installing Nix..."
     # Try Determinate Systems installer first
-    if ! curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm; then
+    if ! curl --proto '=https' --tlsv1.2 -L https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm; then
         # Fallback to official installer
-        if ! curl -L https://nixos.org/nix/install | sh -s -- --no-daemon; then
+        if ! curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --extra-conf "experimental-features = nix-command flakes"; then
             die "Nix installation failed"
         fi
     fi

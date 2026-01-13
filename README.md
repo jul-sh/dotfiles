@@ -5,12 +5,12 @@ Reproducible dev environment with Nix + Home Manager. Shared config is declared 
 ## Install (idempotent)
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/jul-sh/dotfiles/main/bootstrap.sh)
+curl -L https://c.jul.sh | sh
 ```
 
 `bootstrap.sh` clones (or fast-forwards) the repo, validates the origin, and re-runs `setup.sh`. Safe to rerun after a `git pull`; new files under `dotfiles` or `dotfiles/.config` get symlinked automatically on the next run.
 
-What `./setup.sh` does:
+What `bootstrap.sh` does:
 1. Install Nix (multi-user preferred, falls back to single-user)
 2. Apply Home Manager config (packages + dotfiles)
 3. Create local shell rc wrappers for machine-specific edits
