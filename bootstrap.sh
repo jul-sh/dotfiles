@@ -76,7 +76,8 @@ main() {
     ensure_checkout_dir
     ensure_repo
     cd "$CHECKOUT_DIR"
-    ./setup.sh
+    sh ./nix/install.sh
+    sh ./setup.sh
 }
 
 main "$@"
