@@ -1,4 +1,5 @@
 local wezterm = require 'wezterm'
+local act = wezterm.action
 
 -- set size of newly opened windows. ref https://github.com/wezterm/wezterm/issues/3173
 wezterm.on('window-config-reloaded', function(window, pane)
@@ -20,61 +21,84 @@ wezterm.on('window-config-reloaded', function(window, pane)
   end
 end)
 
-return {
-  window_close_confirmation = "NeverPrompt",
-  keys = {
-    -- Option + Left Arrow: Move back one word
-    {
-      key = 'LeftArrow',
-      mods = 'OPT',
-      action = wezterm.action.SendString('\x1bb'),   -- \x1b is the Escape character.
-    },
-    -- Option + Right Arrow: Move forward one word
-    {
-      key = 'RightArrow',
-      mods = 'OPT',
-      action = wezterm.action.SendString('\x1bf'),
-    },
-  },
-  hide_tab_bar_if_only_one_tab = true,
-  font = wezterm.font {
-    family = "Iosevka Charon Mono", -- Corrected font name, assuming it's installed
-    weight = "Medium",             -- Corrected to a valid weight string
-  },
-  font_size = 18.0,
-  adjust_window_size_when_changing_font_size = true,
+local config = wezterm.config_builder()
 
-  -- Set the initial window size.  Crucially, we use *columns* and *lines*,
-  -- not pixel width and height.  Wezterm sizes windows in terms of the
-  -- character cell size.
-  initial_cols = 160,
-  initial_rows = 36,
-
-  -- These settings (color_scheme and window_background_opacity) are *optional*
-  -- but make the output more visually consistent and demonstrate additional config.
-  color_scheme = "Apple System Colors",
-
-  window_background_opacity = 1, -- Makes the background slightly transparent
-
-  -- Disable the scrollbar (optional, but cleans up the UI)
-  enable_scroll_bar = false,
-
-  -- Adjust line height.  This can improve readability, especially with
-  -- monospaced fonts.  A value of 1.0 is the default.  Values greater
-  -- than 1.0 increase spacing, less than 1.0 decrease it.
-  line_height = 1,
-
-  -- This section helps resolve the "No fonts matched" error.  It ensures
-  -- wezterm looks in standard font directories *and* allows you to add
-  -- custom font directories if necessary.
-  -- It is generally a GOOD IDEA to have this in your config.
-  font_dirs = {}, -- Leave this empty to use the default system font directories
-  -- Example of adding a custom font directory (uncomment and modify if needed):
-  -- font_dirs = { "/path/to/your/custom/fonts" },
-
-  -- Other good defaults:
-  enable_wayland = true, -- Use Wayland if available.  Set to false to force X11.
-
-  -- This stops WezTerm from quitting the whole window when a single pane/tab exits.
-  exit_behavior = "Close",
+config.window_close_confirmation = "NeverPrompt"
+config.hide_tab_bar_if_only_one_tab = true
+config.font = wezterm.font {
+  family = "Iosevka Charon Mono", -- Corrected font name, assuming it's installed
+  weight = "Medium",             -- Corrected to a valid weight string
 }
+config.font_size = 18.0
+config.adjust_window_size_when_changing_font_size = true
+
+-- Set the initial window size.
+config.initial_cols = 160
+config.initial_rows = 36
+
+config.color_scheme = "Apple System Colors"
+config.window_background_opacity = 1
+config.enable_scroll_bar = false
+config.line_height = 1
+config.font_dirs = {}
+config.enable_wayland = true
+config.exit_behavior = "Close"
+
+config.keys = {
+  -- Option + Left Arrow: Move back one word
+  {
+    key = 'LeftArrow',
+    mods = 'OPT',
+    action = act.SendString('\x1bb'),
+  },
+  -- Option + Right Arrow: Move forward one word
+  {
+    key = 'RightArrow',
+    mods = 'OPT',
+    action = act.SendString('\x1bf'),
+  },
+}
+
+-- Helper to map Cmd to Ctrl
+local function map_cmd_to_ctrl(key)
+    table.insert(config.keys, {
+        key = key,
+        mods = 'CMD',
+        action = act.SendKey { key = key, mods = 'CTRL' },
+    })
+end
+
+-- List of keys to map (Excluding 'c', 'v', and 'a' as requested)
+local keys_to_map = {
+    'b', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'w', 'x', 'y', 'z',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    '[', ']', '\\', ';', "'", ',', '.', '/', '-', '='
+}
+
+for _, k in ipairs(keys_to_map) do
+    map_cmd_to_ctrl(k)
+end
+
+-- Keep Cmd+C as Native Copy
+table.insert(config.keys, {
+    key = 'c',
+    mods = 'CMD',
+    action = act.CopyTo 'Clipboard',
+})
+
+-- Ensure Cmd+V remains Paste
+table.insert(config.keys, {
+    key = 'v',
+    mods = 'CMD',
+    action = act.PasteFrom 'Clipboard',
+})
+
+-- Keep Cmd+A as Native Select All
+table.insert(config.keys, {
+    key = 'a',
+    mods = 'CMD',
+    action = act.SelectTextAtMouseCursor 'Cell', -- This is a placeholder for native select all behavior in terminal
+})
+
+return config
