@@ -105,7 +105,9 @@ install_app_logic() {
         # Spawn background waiter
         (
             while pgrep -x "$app_name" >/dev/null; do
-                sleep 5
+                # Keep sudo session alive (non-interactive refresh)
+                sudo -n -v 2>/dev/null || true
+                sleep 60
             done
             finalize_app_install "$staged_bundle" "$app_name"
         ) & disown
