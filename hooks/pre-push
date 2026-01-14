@@ -19,3 +19,13 @@ if echo "$output" | grep -q "Updated input"; then
 fi
 
 echo "flake.lock is up to date."
+
+echo "Checking for symlinks in dotfiles/..."
+symlinks=$(find ./dotfiles -type l 2>/dev/null || true)
+if [ -n "$symlinks" ]; then
+    echo "error: Symlinks found in dotfiles/ - these should be regular files:"
+    echo "$symlinks"
+    echo "Run: git reset HEAD -- dotfiles/ && rm -rf ./dotfiles && git checkout HEAD -- dotfiles/"
+    exit 1
+fi
+echo "No symlinks in dotfiles/."
