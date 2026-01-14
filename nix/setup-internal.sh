@@ -349,10 +349,14 @@ symlink_dotfiles() {
     repo_dir=$(pwd)
 
     # Remove old Nix store symlinks that would redirect writes to source
+    # Find all directories in dotfiles/ and check if corresponding $HOME path is a symlink to Nix store
     echo "  Cleaning up old Nix symlinks..."
-    for dir in ~/.config/aichat ~/.config/atuin ~/.config/wezterm ~/.config/zed ~/.config/zellij ~/.claude ~/.codex; do
-        if [[ -L "$dir" ]]; then
-            rm -f "$dir"
+    find "$src_dir" -type d | while read -r dir; do
+        local rel="${dir#$src_dir/}"
+        [[ -z "$rel" ]] && continue
+        local home_path="$HOME/$rel"
+        if [[ -L "$home_path" ]] && readlink "$home_path" | grep -q "^/nix/store"; then
+            rm -f "$home_path"
         fi
     done
 
