@@ -348,6 +348,25 @@ symlink_dotfiles() {
     local repo_dir
     repo_dir=$(pwd)
 
+    # Remove old Nix store symlinks that would redirect writes to source
+    echo "  Cleaning up old Nix symlinks..."
+    for dir in ~/.config/aichat ~/.config/atuin ~/.config/wezterm ~/.config/zed ~/.config/zellij ~/.claude ~/.codex; do
+        if [[ -L "$dir" ]]; then
+            rm -f "$dir"
+        fi
+    done
+
+    # Restore any corrupted source files (symlinks in dotfiles/)
+    local corrupted
+    corrupted=$(find "$src_dir" -type l 2>/dev/null || true)
+    if [[ -n "$corrupted" ]]; then
+        echo "  Restoring corrupted source files..."
+        while IFS= read -r f; do
+            rm -f "$f"
+            git checkout HEAD -- "${f#./}" 2>/dev/null || true
+        done <<< "$corrupted"
+    fi
+
     find "$src_dir" -type f ! -name "*.backup" ! -name ".DS_Store" | while read -r src; do
         local rel="${src#$src_dir/}"
         local dst="$HOME/$rel"
