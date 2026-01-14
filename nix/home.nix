@@ -21,45 +21,15 @@
   ];
 
   # --- 2. Dotfiles ---
-  # This section declaratively manages your configuration files.
-  # We use out-of-store symlinks to allow live editing in your repo.
-  home.file =
-    let
-      dotfilesDir = "${config.home.homeDirectory}/git/dotfiles/dotfiles";
-      dotfilesContents = lib.filterAttrs (name: type: name != ".config") (builtins.readDir ../dotfiles);
-      # Create file mappings - all files in dotfiles/ get linked out-of-store
-      autoMappings = lib.mapAttrs' (name: type: {
-        name = name;
-        value = {
-          source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/${name}";
-        };
-      }) dotfilesContents;
-    in
-    autoMappings // {
-      # Create an empty .hushlogin to prevent the "last login" message in the terminal.
-      ".hushlogin".text = "";
-
-      # This file is managed by Nix to handle store-path dependent plugin loading.
-      # It is sourced by your live-editable .zshrc.shared.
-      ".zsh_plugins.sh".text = ''
-        source ${inputs.zsh-syntax-highlighting}/zsh-syntax-highlighting.plugin.zsh
-        source ${inputs.zsh-autocomplete}/zsh-autocomplete.plugin.zsh
-      '';
-    };
-
-  # --- Files in .config (XDG_CONFIG_HOME) ---
-  # Automatically link all files and directories from dotfiles/.config
-  xdg.configFile =
-    let
-      configDir = "${config.home.homeDirectory}/git/dotfiles/dotfiles/.config";
-      configContents = builtins.readDir ../dotfiles/.config;
-    in
-    lib.mapAttrs' (name: type: {
-      name = name;
-      value = {
-        source = config.lib.file.mkOutOfStoreSymlink "${configDir}/${name}";
-      };
-    }) configContents;
+  # Most dotfiles are symlinked by setup-internal.sh (not Nix).
+  # Only Nix-dependent files are managed here.
+  home.file = {
+    ".hushlogin".text = "";
+    ".zsh_plugins.sh".text = ''
+      source ${inputs.zsh-syntax-highlighting}/zsh-syntax-highlighting.plugin.zsh
+      source ${inputs.zsh-autocomplete}/zsh-autocomplete.plugin.zsh
+    '';
+  };
 
   # --- 3. Fonts ---
   fonts.fontconfig.enable = pkgs.stdenv.isLinux; # Ensures font cache is updated on Linux

@@ -342,6 +342,29 @@ configure_os() {
         "—ฅ/ᐠ. ̫.ᐟ\\\ฅ— if it is lost, pls return this computer to lost@jul.sh"
 }
 
+symlink_dotfiles() {
+    echo "Symlinking dotfiles..."
+    local src_dir="./dotfiles"
+    local repo_dir
+    repo_dir=$(pwd)
+
+    find "$src_dir" -type f ! -name "*.backup" ! -name ".DS_Store" | while read -r src; do
+        local rel="${src#$src_dir/}"
+        local dst="$HOME/$rel"
+        local target="${repo_dir}/dotfiles/${rel}"
+
+        # Skip if already correctly symlinked
+        if [[ -L "$dst" ]] && [[ "$(readlink "$dst")" == "$target" ]]; then
+            continue
+        fi
+
+        mkdir -p "$(dirname "$dst")"
+        rm -f "$dst"
+        ln -s "$target" "$dst"
+        echo "  $rel"
+    done
+}
+
 install_git_hooks() {
     echo "Installing git hooks..."
     mkdir -p .git/hooks
@@ -350,6 +373,7 @@ install_git_hooks() {
 
 run_setup() {
     apply_nix_config
+    symlink_dotfiles
     setup_local_rc_files
     install_desktop_apps
     build_spotlight_scripts
