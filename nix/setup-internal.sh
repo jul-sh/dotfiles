@@ -333,7 +333,7 @@ configure_os() {
     defaults write com.apple.screencapture location -string "${HOME}/Desktop"
     defaults write NSGlobalDomain AppleShowAllExtensions -bool true
     defaults write com.apple.dock show-recents -int 0
-    defaults write com.apple.dock minimize-to-application -int 1
+    defaults write com.apple.dock minimize-to-application -int 0
     defaults write com.apple.dock tilesize -int 34
     defaults write com.apple.dock orientation -string "left"
     killall Dock 2>/dev/null || true

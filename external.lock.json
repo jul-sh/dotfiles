@@ -5,14 +5,14 @@
     "sha256": "e77388cad55f2e9da95a220a89206a6c58f865874a629b7c3ea3c162f5692224"
   },
   "zed": {
-    "version": "v0.218.7",
+    "version": "v0.219.4",
     "aarch64": {
-      "url": "https://github.com/zed-industries/zed/releases/download/v0.218.7/Zed-aarch64.dmg",
-      "sha256": "cff3e27875373b390862548a6a3a93705316c0410e763873dcdff84da384d213"
+      "url": "https://github.com/zed-industries/zed/releases/download/v0.219.4/Zed-aarch64.dmg",
+      "sha256": "2b99569832df36ed017c3e39fd48efdb065084705bd54cb5dd18351f4b2ff543"
     },
     "x86_64": {
-      "url": "https://github.com/zed-industries/zed/releases/download/v0.218.7/Zed-x86_64.dmg",
-      "sha256": "e2a4b38b5166a37c967a2c8e26ff57155f037f546607739296464d7010809e46"
+      "url": "https://github.com/zed-industries/zed/releases/download/v0.219.4/Zed-x86_64.dmg",
+      "sha256": "55c7fbf87b2957d9aeaedf10dbbd7876374dfb67a68590ce4615ae2ed2e0ad2a"
     }
   },
   "iosevka-charon": {
@@ -21,8 +21,8 @@
     "sha256": "d5edb8cf50f9fe3f1ceef08f27498e070cc77deef92c0e52756fc2d399367dc6"
   },
   "clipkitty": {
-    "version": "commit-38bd38ba8560a63dd5b3d772987fef3a25d90300",
-    "url": "https://github.com/jul-sh/clipkitty/releases/download/commit-38bd38ba8560a63dd5b3d772987fef3a25d90300/ClipKitty.app.zip",
-    "sha256": "ca08d78f9bd9590f82ae02e90e5facbe32a97ea5008031fe33ab7a611b9865c1"
+    "version": "commit-0626b6d961e5287825288779c1fe4bebba7ba101",
+    "url": "https://github.com/jul-sh/clipkitty/releases/download/commit-0626b6d961e5287825288779c1fe4bebba7ba101/ClipKitty.app.zip",
+    "sha256": "571fd63a9d1cd2072cb631f648b54585436dfeca4b18651d5c11306927873d08"
   }
 }
