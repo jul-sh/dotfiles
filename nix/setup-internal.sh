@@ -330,12 +330,29 @@ configure_os() {
         ./macos/sleep_on_lid_close.sh /Library/Scripts/sleep_on_lid_close.sh \
         ./macos/com.julsh.sleeponlidclose.plist /Library/LaunchDaemons/com.julsh.sleeponlidclose.plist
 
-    defaults write com.apple.screencapture location -string "${HOME}/Desktop"
+    # Set the location to the Downloads folder
+    defaults write com.apple.screencapture location -string "${HOME}/Downloads"
     defaults write NSGlobalDomain AppleShowAllExtensions -bool true
     defaults write com.apple.dock show-recents -int 0
     defaults write com.apple.dock minimize-to-application -int 0
     defaults write com.apple.dock tilesize -int 34
     defaults write com.apple.dock orientation -string "left"
+
+    defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 30 "
+    <dict>
+        <key>enabled</key><true/>
+        <key>value</key>
+        <dict>
+            <key>parameters</key>
+            <array>
+                <integer>115</integer>
+                <integer>1</integer>
+                <integer>1572864</integer>
+            </array>
+            <key>type</key><string>standard</string>
+        </dict>
+    </dict>"
+
     killall Dock 2>/dev/null || true
 
     sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText \
