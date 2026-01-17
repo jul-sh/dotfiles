@@ -1,7 +1,7 @@
 {
-  "model": "opus",
   "attribution": {
     "commit": "",
     "pr": ""
-  }
+  },
+  "model": "haiku"
 }

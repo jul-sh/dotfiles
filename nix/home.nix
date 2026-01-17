@@ -18,6 +18,7 @@
     gh
     rustup
     direnv
+    nodejs
   ];
 
   # --- 2. Dotfiles ---
