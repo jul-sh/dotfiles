@@ -24,7 +24,8 @@ export PATH="$HOME/go/bin:$PATH"
 # NPM: npm install -g <package> (when configured with prefix=~/.npm-global)
 export PATH="$HOME/.npm-global/bin:$PATH"
 
-export PATH="/usr/local/bin:$PATH"
+# System binaries (lower priority than Nix packages)
+export PATH="$PATH:/usr/local/bin"
 
 if command -v python3 &> /dev/null; then
   # Set these if python3 is available
