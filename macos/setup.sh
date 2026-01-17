@@ -161,12 +161,24 @@ build_spotlight_scripts() {
 
 install_launchdaemon() {
     local script_src="$1" script_dst="$2" plist_src="$3" plist_dst="$4"
-    cmp -s "$script_src" "$script_dst" && cmp -s "$plist_src" "$plist_dst" && return 0
+    local plist_name
+    plist_name=$(basename "$plist_dst")
 
-    echo "Installing $(basename "$plist_src")..."
-    sudo cp "$script_src" "$script_dst"
-    sudo chmod +x "$script_dst"
-    sudo cp "$plist_src" "$plist_dst"
+    local files_changed=false
+    if ! cmp -s "$script_src" "$script_dst" || ! cmp -s "$plist_src" "$plist_dst"; then
+        files_changed=true
+    fi
+
+    if $files_changed; then
+        echo "Installing ${plist_name}..."
+        # Unload first if updating
+        sudo launchctl unload "$plist_dst" 2>/dev/null || true
+        sudo cp "$script_src" "$script_dst"
+        sudo chmod +x "$script_dst"
+        sudo cp "$plist_src" "$plist_dst"
+    fi
+
+    # Always ensure daemon is loaded (idempotent - fails silently if already loaded)
     sudo launchctl load -w "$plist_dst" 2>/dev/null || true
 }
 
