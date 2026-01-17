@@ -1,9 +1,3 @@
-
-# Source shared profile if it exists
-if [ -f "$HOME/.profile.shared" ]; then
-  source "$HOME/.profile.shared"
-fi
-
 # Print a greeting message
 echo -e "\e[3mHi girl, you're doing great this $(date +"%A"). —ฅ/ᐠ. ̫.ᐟ\ฅ—\e[0m"
 

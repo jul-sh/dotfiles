@@ -111,7 +111,7 @@ install_cargo_tools() {
 }
 
 setup_local_rc_files() {
-    local pairs=".profile:.profile.shared .bashrc:.bashrc.shared .zshrc:.zshrc.shared"
+    local pairs=".profile:.profile.shared .bash_profile:.profile.shared .bashrc:.bashrc.shared .zprofile:.profile.shared .zshrc:.zshrc.shared"
 
     for pair in $pairs; do
         local rc="${pair%%:*}"
