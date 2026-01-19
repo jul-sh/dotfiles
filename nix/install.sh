@@ -22,10 +22,10 @@ install_nix() {
     fi
 
     echo "Installing Nix..."
-    # Try Determinate Systems installer first
-    if ! curl --proto '=https' --tlsv1.2 -L https://install.determinate.systems/nix | sh -s -- install --determinate --no-confirm; then
-        # Fallback to official installer
-        if ! curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --extra-conf "experimental-features = nix-command flakes"; then
+    # Try official installer with multi-user mode first
+    if ! curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --daemon --yes --nix-extra-conf-file <(echo "experimental-features = nix-command flakes"); then
+        # Fallback to single-user mode
+        if ! curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --no-daemon --yes --nix-extra-conf-file <(echo "experimental-features = nix-command flakes"); then
             die "Nix installation failed"
         fi
     fi
