@@ -21,8 +21,8 @@
     "sha256": "d5edb8cf50f9fe3f1ceef08f27498e070cc77deef92c0e52756fc2d399367dc6"
   },
   "clipkitty": {
-    "version": "commit-0626b6d961e5287825288779c1fe4bebba7ba101",
-    "url": "https://github.com/jul-sh/clipkitty/releases/download/commit-0626b6d961e5287825288779c1fe4bebba7ba101/ClipKitty.app.zip",
-    "sha256": "571fd63a9d1cd2072cb631f648b54585436dfeca4b18651d5c11306927873d08"
+    "version": "commit-f6e5972d755276c4a4566b92eba8c17611017481",
+    "url": "https://github.com/jul-sh/clipkitty/releases/download/commit-f6e5972d755276c4a4566b92eba8c17611017481/ClipKitty.dmg",
+    "sha256": "c4f7966ca948b5ee3ed1b9712f201403a04602d431e10b6a57d3698e88113382"
   }
 }

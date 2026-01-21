@@ -101,7 +101,7 @@ fetch_clipkitty_latest() {
     version=$(jq -r '.tag_name' "$tmp_json")
 
     local url
-    url=$(jq -r '.assets[] | select(.name == "ClipKitty.app.zip") | .browser_download_url' "$tmp_json")
+    url=$(jq -r '.assets[] | select(.name == "ClipKitty.dmg") | .browser_download_url' "$tmp_json")
     rm "$tmp_json"
 
     echo "  Fetching ClipKitty hash..." >&2

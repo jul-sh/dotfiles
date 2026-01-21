@@ -125,7 +125,7 @@ install_clipkitty() {
     url=$(jq -r '.clipkitty.url' "$lockfile")
     sha256=$(jq -r '.clipkitty.sha256' "$lockfile")
     echo "  Installing ClipKitty..."
-    install_app_from_zip "$url" "$sha256" "ClipKitty"
+    install_app_from_dmg "$url" "$sha256" "ClipKitty"
 }
 
 install_desktop_apps() {
