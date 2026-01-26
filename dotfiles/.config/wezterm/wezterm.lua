@@ -35,6 +35,12 @@ return {
       mods = 'OPT',
       action = wezterm.action.SendString('\x1bf'),
     },
+    -- Shift + Enter: Send newline
+    {
+      key = 'Enter',
+      mods = 'SHIFT',
+      action = wezterm.action.SendString('\n'),
+    },
   },
   hide_tab_bar_if_only_one_tab = true,
   font = wezterm.font {
