@@ -84,8 +84,8 @@ keybinds clear-defaults=true {
 }
 
 // --- VISUAL & BEHAVIOR SETTINGS ---
-pane_frames false
-default_layout "compact" // Uses a single line for the tab bar
+pane_frames true
+default_layout "default" // Shows full status bar with keyboard shortcuts
 scroll_buffer_size 100000
 show_release_notes false
 show_startup_tips false
