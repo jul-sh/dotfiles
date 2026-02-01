@@ -1,28 +1,7 @@
 {
-  "wezterm": {
-    "version": "20240203-110809-5046fc22",
-    "url": "https://github.com/wezterm/wezterm/releases/download/20240203-110809-5046fc22/WezTerm-macos-20240203-110809-5046fc22.zip",
-    "sha256": "e77388cad55f2e9da95a220a89206a6c58f865874a629b7c3ea3c162f5692224"
-  },
-  "zed": {
-    "version": "v0.219.4",
-    "aarch64": {
-      "url": "https://github.com/zed-industries/zed/releases/download/v0.219.4/Zed-aarch64.dmg",
-      "sha256": "2b99569832df36ed017c3e39fd48efdb065084705bd54cb5dd18351f4b2ff543"
-    },
-    "x86_64": {
-      "url": "https://github.com/zed-industries/zed/releases/download/v0.219.4/Zed-x86_64.dmg",
-      "sha256": "55c7fbf87b2957d9aeaedf10dbbd7876374dfb67a68590ce4615ae2ed2e0ad2a"
-    }
-  },
   "iosevka-charon": {
     "version": "pre-b3162d9da3c6c56995cbc764ff8d6fe025b6af9b",
     "url": "https://github.com/jul-sh/iosevka-charon/releases/download/pre-b3162d9da3c6c56995cbc764ff8d6fe025b6af9b/iosevka-charon.zip",
     "sha256": "d5edb8cf50f9fe3f1ceef08f27498e070cc77deef92c0e52756fc2d399367dc6"
-  },
-  "clipkitty": {
-    "version": "commit-f6e5972d755276c4a4566b92eba8c17611017481",
-    "url": "https://github.com/jul-sh/clipkitty/releases/download/commit-f6e5972d755276c4a4566b92eba8c17611017481/ClipKitty.dmg",
-    "sha256": "c4f7966ca948b5ee3ed1b9712f201403a04602d431e10b6a57d3698e88113382"
   }
 }

@@ -1,71 +1,15 @@
 #!/usr/bin/env bash
 #
-# Updates flake.lock and apps.lock.json to latest versions.
+# Updates flake.lock and external.lock.json to latest versions.
 #
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 LOCKFILE="external.lock.json"
 
-get_arch() {
-    case "$(uname -m)" in
-        x86_64)        echo "x86_64" ;;
-        aarch64|arm64) echo "aarch64" ;;
-        *)             echo "unknown" ;;
-    esac
-}
-
 update_flake() {
     echo "Updating flake.lock..."
     nix flake update --flake ./nix
-}
-
-fetch_wezterm_latest() {
-    local api_url="https://api.github.com/repos/wez/wezterm/releases/latest"
-    local tmp_json
-    tmp_json=$(mktemp)
-
-    curl -fsSL "$api_url" -o "$tmp_json"
-
-    local version
-    version=$(jq -r '.tag_name' "$tmp_json")
-
-    local url="https://github.com/wezterm/wezterm/releases/download/${version}/WezTerm-macos-${version}.zip"
-
-    echo "  Fetching WezTerm hash..." >&2
-    local sha256
-    sha256=$(curl -fsSL "${url}.sha256" | awk '{print $1}')
-
-    local result
-    result=$(jq -n --arg v "$version" --arg u "$url" --arg s "$sha256" \
-        '{version: $v, url: $u, sha256: $s}')
-    rm "$tmp_json"
-    echo "$result"
-}
-
-fetch_zed_latest() {
-    local api_url="https://api.github.com/repos/zed-industries/zed/releases/latest"
-    local tmp_json
-    tmp_json=$(mktemp)
-
-    curl -fsSL "$api_url" -o "$tmp_json"
-
-    local version
-    version=$(jq -r '.tag_name' "$tmp_json")
-    rm "$tmp_json"
-
-    local result='{"version":"'"$version"'"}'
-
-    for arch in aarch64 x86_64; do
-        local url="https://github.com/zed-industries/zed/releases/download/${version}/Zed-${arch}.dmg"
-        echo "  Fetching Zed ${arch} hash..." >&2
-        local sha256
-        sha256=$(curl -fsSL "$url" | shasum -a 256 | awk '{print $1}')
-        result=$(echo "$result" | jq --arg a "$arch" --arg u "$url" --arg s "$sha256" \
-            '.[$a] = {url: $u, sha256: $s}')
-    done
-
-    echo "$result"
 }
 
 fetch_iosevka_charon_latest() {
@@ -90,49 +34,15 @@ fetch_iosevka_charon_latest() {
         '{version: $v, url: $u, sha256: $s}'
 }
 
-fetch_clipkitty_latest() {
-    local api_url="https://api.github.com/repos/jul-sh/clipkitty/releases/latest"
-    local tmp_json
-    tmp_json=$(mktemp)
-
-    curl -fsSL "$api_url" -o "$tmp_json"
-
-    local version
-    version=$(jq -r '.tag_name' "$tmp_json")
-
-    local url
-    url=$(jq -r '.assets[] | select(.name == "ClipKitty.dmg") | .browser_download_url' "$tmp_json")
-    rm "$tmp_json"
-
-    echo "  Fetching ClipKitty hash..." >&2
-    local sha256
-    sha256=$(curl -fsSL "$url" | shasum -a 256 | awk '{print $1}')
-
-    jq -n --arg v "$version" --arg u "$url" --arg s "$sha256" \
-        '{version: $v, url: $u, sha256: $s}'
-}
-
 update_apps() {
-    echo "Updating external.lock.json..."
-
-    echo "Fetching WezTerm latest..."
-    local wezterm
-    wezterm=$(fetch_wezterm_latest)
-
-    echo "Fetching Zed latest..."
-    local zed
-    zed=$(fetch_zed_latest)
+    echo "Updating $LOCKFILE..."
 
     echo "Fetching iosevka-charon latest..."
     local iosevka_charon
     iosevka_charon=$(fetch_iosevka_charon_latest)
 
-    echo "Fetching ClipKitty latest..."
-    local clipkitty
-    clipkitty=$(fetch_clipkitty_latest)
-
-    jq -n --argjson w "$wezterm" --argjson z "$zed" --argjson i "$iosevka_charon" --argjson c "$clipkitty" \
-        '{wezterm: $w, zed: $z, "iosevka-charon": $i, clipkitty: $c}' > "$LOCKFILE"
+    jq -n --argjson i "$iosevka_charon" \
+        '{"iosevka-charon": $i}' > "$LOCKFILE"
 
     echo "Updated $LOCKFILE"
 }

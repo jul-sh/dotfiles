@@ -8,147 +8,37 @@ cd "$(dirname "$0")/.."
 
 die() { echo "error: $1" >&2; exit 1; }
 
-check_app_updates() {
-    local lockfile="./external.lock.json"
-
-    local locked_wezterm
-    locked_wezterm=$(jq -r '.wezterm.version' "$lockfile")
-    local latest_wezterm
-    latest_wezterm=$(curl -fsSL "https://api.github.com/repos/wez/wezterm/releases/latest" 2>/dev/null | jq -r '.tag_name' || echo "$locked_wezterm")
-    if [[ "$latest_wezterm" != "$locked_wezterm" ]]; then
-        echo "warning: WezTerm $latest_wezterm available (locked: $locked_wezterm). Run ./update.sh to update."
-    fi
-
-    local locked_zed
-    locked_zed=$(jq -r '.zed.version' "$lockfile")
-    local latest_zed
-    latest_zed=$(curl -fsSL "https://api.github.com/repos/zed-industries/zed/releases/latest" 2>/dev/null | jq -r '.tag_name' || echo "$locked_zed")
-    if [[ "$latest_zed" != "$locked_zed" ]]; then
-        echo "warning: Zed $latest_zed available (locked: $locked_zed). Run ./update.sh to update."
-    fi
-}
-
-finalize_app_install() {
-    local source_bundle="$1" app_name="$2"
-    echo "  Finalizing $app_name installation..."
-    sudo rm -rf "/Applications/${app_name}.app"
-    sudo mv "$source_bundle" "/Applications/${app_name}.app"
-    sudo xattr -dr com.apple.quarantine "/Applications/${app_name}.app" 2>/dev/null || true
-}
-
-install_app_logic() {
-    local new_bundle="$1" app_name="$2"
-
-    if pgrep -x "$app_name" >/dev/null; then
-        local staging_dir="$HOME/.local/share/clipkitty/update_staging"
-        mkdir -p "$staging_dir"
-        local staged_bundle="${staging_dir}/${app_name}.app"
-
-        echo "  $app_name is currently running. Update scheduled for when it closes."
-        rm -rf "$staged_bundle"
-        mv "$new_bundle" "$staged_bundle"
-
-        # Spawn background waiter
-        (
-            while pgrep -x "$app_name" >/dev/null; do
-                # Keep sudo session alive (non-interactive refresh)
-                sudo -n -v 2>/dev/null || true
-                sleep 60
-            done
-            finalize_app_install "$staged_bundle" "$app_name"
-        ) & disown
-    else
-        finalize_app_install "$new_bundle" "$app_name"
-    fi
-}
-
-install_app_from_zip() {
-    local url="$1" expected_sha256="$2" app_name="$3"
-    local tmp_dir zip_path actual_sha256
-
-    tmp_dir="$(mktemp -d)"
-    zip_path="${tmp_dir}/app.zip"
-
-    curl -fsSL "$url" -o "$zip_path"
-    actual_sha256=$(shasum -a 256 "$zip_path" | awk '{print $1}')
-    if [[ "$actual_sha256" != "$expected_sha256" ]]; then
-        rm -rf "$tmp_dir"
-        die "SHA256 mismatch for $app_name: expected $expected_sha256, got $actual_sha256"
-    fi
-
-    unzip -q "$zip_path" -d "$tmp_dir"
-    local app_bundle
-    app_bundle=$(find "$tmp_dir" -name "*.app" -type d | head -1)
-    if [[ -z "$app_bundle" ]]; then
-        echo "Contents of extracted zip:"
-        ls -la "$tmp_dir"
-        rm -rf "$tmp_dir"
-        die "No .app bundle found in $app_name zip file"
-    fi
-
-    install_app_logic "$app_bundle" "$app_name"
-
-    rm -rf "$tmp_dir"
-}
-
-install_app_from_dmg() {
-    local url="$1" expected_sha256="$2" app_name="$3"
-    local tmp_dir dmg_path actual_sha256 mount_point
-
-    tmp_dir="$(mktemp -d)"
-    dmg_path="${tmp_dir}/app.dmg"
-
-    curl -fsSL "$url" -o "$dmg_path"
-    actual_sha256=$(shasum -a 256 "$dmg_path" | awk '{print $1}')
-    if [[ "$actual_sha256" != "$expected_sha256" ]]; then
-        rm -rf "$tmp_dir"
-        die "SHA256 mismatch for $app_name: expected $expected_sha256, got $actual_sha256"
-    fi
-
-    mount_point=$(hdiutil attach -nobrowse -readonly "$dmg_path" 2>/dev/null | grep -o '/Volumes/.*' | head -1)
-    local app_bundle
-    app_bundle=$(find "$mount_point" -maxdepth 1 -name "*.app" | head -1)
-
-    # Copy from read-only mount to a writable temp location before handing off to logic
-    local writable_bundle="${tmp_dir}/staged_${app_name}.app"
-    cp -R "$app_bundle" "$writable_bundle"
-    hdiutil detach "$mount_point" -quiet
-
-    install_app_logic "$writable_bundle" "$app_name"
-
-    rm -rf "$tmp_dir"
-}
-
-install_clipkitty() {
-    local lockfile="./external.lock.json"
-    local url sha256
-    url=$(jq -r '.clipkitty.url' "$lockfile")
-    sha256=$(jq -r '.clipkitty.sha256' "$lockfile")
-    echo "  Installing ClipKitty..."
-    install_app_from_dmg "$url" "$sha256" "ClipKitty"
-}
-
 install_desktop_apps() {
     echo "Installing desktop apps..."
-    check_app_updates
-
-    local arch
-    arch=$(uname -m)
-    [[ "$arch" == "arm64" ]] && arch="aarch64"
-
-    local wezterm_url wezterm_sha256
-    wezterm_url=$(jq -r '.wezterm.url' "./external.lock.json")
-    wezterm_sha256=$(jq -r '.wezterm.sha256' "./external.lock.json")
-    echo "  Installing WezTerm..."
-    install_app_from_zip "$wezterm_url" "$wezterm_sha256" "WezTerm"
-
-    local zed_url zed_sha256
-    zed_url=$(jq -r ".zed.${arch}.url" "./external.lock.json")
-    zed_sha256=$(jq -r ".zed.${arch}.sha256" "./external.lock.json")
-    echo "  Installing Zed..."
-    install_app_from_dmg "$zed_url" "$zed_sha256" "Zed"
-
-    install_clipkitty
+    echo "Ensuring desktop apps are managed by Homebrew..."
+    local casks=("wezterm" "zed" "jul-sh/clipkitty/clipkitty")
+    for cask in "${casks[@]}"; do
+        local base_name="${cask##*/}"
+        # Check if installed
+        if ! brew list --cask | grep -q "^${base_name}$"; then
+            echo "Installing $cask..."
+            brew install --cask "$cask"
+        else
+            # Check if outdated
+            if brew outdated --cask --quiet "$cask" >/dev/null 2>&1; then
+                if pgrep -ix "$base_name" >/dev/null; then
+                    echo "  $base_name is currently running. Scheduling update for when it closes..."
+                    (
+                        while pgrep -ix "$base_name" >/dev/null; do
+                            sleep 60
+                        done
+                        echo "  $base_name closed. Starting Homebrew update..."
+                        brew upgrade --cask "$cask"
+                    ) & disown
+                else
+                    echo "Updating $base_name..."
+                    brew upgrade --cask "$cask" || true
+                fi
+            else
+                echo "  $base_name is up to date."
+            fi
+        fi
+    done
 }
 
 build_spotlight_scripts() {
