@@ -4,6 +4,7 @@
 [core]
   editor = fresh
 	ignorecase = false
+	hooksPath = /Users/julsh/.config/git/hooks
 [commit]
 	gpgsign = false
 [push]

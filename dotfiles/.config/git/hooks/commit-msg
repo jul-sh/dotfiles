@@ -1,0 +1,15 @@
+#!/bin/sh
+# Remove Claude Code attribution from commit messages
+
+MSG_FILE="$1"
+
+# Remove the Claude Code line and any Co-Authored-By Claude line (any model name)
+# Unfortunately, Claude Code tends to ignore the setting to disable this, so we
+# have to remove it here.
+sed -i '' \
+    -e '/^🤖 Generated with \[Claude Code\]/d' \
+    -e '/^Co-Authored-By: Claude .* <noreply@anthropic.com>$/d' \
+    "$MSG_FILE"
+
+# Remove trailing blank lines
+sed -i '' -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$MSG_FILE"
