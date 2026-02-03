@@ -160,8 +160,17 @@ main() {
         echo "Skipping system configuration (--no-sudo)"
     else
         echo "Configuring system defaults (requires sudo)..."
-        sudo -v
-        configure_system_defaults
+        if sudo -v; then
+            configure_system_defaults
+        else
+            echo ""
+            printf "Skip system configuration and continue? [y/N]: "
+            read -r choice < /dev/tty || choice=""
+            case "$choice" in
+                y|Y) echo "Skipping system configuration." ;;
+                *) die "Setup aborted" ;;
+            esac
+        fi
     fi
 }
 
