@@ -2,32 +2,22 @@
 
 Reproducible dev environment with Nix + Home Manager. Shared config is declared once and symlinked in; machine-specific tweaks stay yours.
 
-## Install (idempotent)
+## Install
 
 ```bash
 curl -L https://c.jul.sh | sh
 ```
 
-`bootstrap.sh` clones (or fast-forwards) the repo, validates the origin, and re-runs `setup.sh`. Safe to rerun after a `git pull`; new files under `dotfiles` or `dotfiles/.config` get symlinked automatically on the next run.
+Idempotent. Safe to rerun after pulling changes—new dotfiles get symlinked automatically.
 
-What `bootstrap.sh` does:
-1. Install Nix (multi-user preferred, falls back to single-user)
-2. Apply Home Manager config (packages + dotfiles)
-3. Create local shell rc wrappers for machine-specific edits
-4. Install GUI apps (Raycast, Zed)
-5. Apply macOS tweaks
+To skip steps that require sudo (single-user Nix, no system-level macOS tweaks):
 
-## Layout
-
-- **Live-Edited (Symlinked)**: Every file in `./dotfiles` (including shared shell scripts) is linked directly to your repository using `mkOutOfStoreSymlink`. Just edit and save.
-- **Nix-Managed Environment**: Nix handles package installation and environment setup. It generates a small `~/.zsh_plugins.sh` to load store-dependent ZSH plugins.
-- **Local Wrappers**: Your git-ignored `.zshrc`, `.bashrc`, etc., source the `.shared` files.
-
-### Shell Source Flow
-```text
-~/.zshrc (Local wrapper)
-  └─ sources ~/.zshrc.shared (Live-editable in dotfiles/)
-       ├─ sources ~/.profile.shared (Live-editable in dotfiles/)
-       ├─ sources ~/.utils.sh (Live-editable in dotfiles/)
-       └─ sources ~/.zsh_plugins.sh (Nix-managed plugins)
+```bash
+curl -L https://c.jul.sh | sh -s -- --no-sudo
 ```
+
+## How it works
+
+- **Nix + Home Manager** handle packages and environment setup
+- **Symlinks** keep dotfiles live-editable (edit in repo, changes apply immediately)
+- **Local wrappers** like `~/.zshrc` are git-ignored and just source the shared configs (e.g., `~/.zshrc.shared`). This keeps the repo declarative while letting installers and machine-specific tweaks modify the entrypoint freely

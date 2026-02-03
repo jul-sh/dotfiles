@@ -22,11 +22,18 @@ install_nix() {
     fi
 
     echo "Installing Nix..."
-    # Try official installer with multi-user mode first
-    if ! curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --daemon --yes --nix-extra-conf-file <(echo "experimental-features = nix-command flakes"); then
-        # Fallback to single-user mode
+    if [ "${NO_SUDO:-}" = "1" ]; then
+        # Single-user mode only (no sudo)
         if ! curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --no-daemon --yes --nix-extra-conf-file <(echo "experimental-features = nix-command flakes"); then
             die "Nix installation failed"
+        fi
+    else
+        # Try official installer with multi-user mode first
+        if ! curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --daemon --yes --nix-extra-conf-file <(echo "experimental-features = nix-command flakes"); then
+            # Fallback to single-user mode
+            if ! curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --no-daemon --yes --nix-extra-conf-file <(echo "experimental-features = nix-command flakes"); then
+                die "Nix installation failed"
+            fi
         fi
     fi
     source_nix_profile

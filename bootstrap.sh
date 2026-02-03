@@ -7,6 +7,15 @@ set -eu
 REPO_URL="${REPO_URL:-https://github.com/jul-sh/dotfiles.git}"
 CHECKOUT_DIR="${CHECKOUT_DIR:-$HOME/git/dotfiles}"
 TARGET_REF="${TARGET_REF:-}"
+NO_SUDO="${NO_SUDO:-}"
+
+# Parse arguments
+for arg in "$@"; do
+    case "$arg" in
+        --no-sudo) NO_SUDO=1 ;;
+    esac
+done
+export NO_SUDO
 
 die() { echo "error: $*" >&2; exit 1; }
 have_cmd() { command -v "$1" >/dev/null 2>&1; }

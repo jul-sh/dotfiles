@@ -49,6 +49,35 @@ build_spotlight_scripts() {
     fi
 }
 
+install_launchagent() {
+    local script_src="$1" plist_src="$2"
+    local script_name plist_name script_dst plist_dst
+    script_name=$(basename "$script_src")
+    plist_name=$(basename "$plist_src")
+    script_dst="$HOME/.local/bin/$script_name"
+    plist_dst="$HOME/Library/LaunchAgents/$plist_name"
+
+    mkdir -p "$HOME/.local/bin" "$HOME/Library/LaunchAgents"
+
+    local transformed_plist
+    transformed_plist=$(sed "s|/Library/Scripts|$HOME/.local/bin|g" "$plist_src")
+
+    local files_changed=false
+    if ! cmp -s "$script_src" "$script_dst" || [[ "$transformed_plist" != "$(cat "$plist_dst" 2>/dev/null)" ]]; then
+        files_changed=true
+    fi
+
+    if $files_changed; then
+        echo "Installing ${plist_name}..."
+        launchctl unload "$plist_dst" 2>/dev/null || true
+        cp "$script_src" "$script_dst"
+        chmod +x "$script_dst"
+        echo "$transformed_plist" > "$plist_dst"
+    fi
+
+    launchctl load -w "$plist_dst" 2>/dev/null || true
+}
+
 install_launchdaemon() {
     local script_src="$1" script_dst="$2" plist_src="$3" plist_dst="$4"
     local plist_name
@@ -72,16 +101,9 @@ install_launchdaemon() {
     sudo launchctl load -w "$plist_dst" 2>/dev/null || true
 }
 
-configure_os() {
-    install_launchdaemon \
-        ./macos/capslock_to_backspace.sh /Library/Scripts/capslock_to_backspace.sh \
-        ./macos/com.capslock_to_backspace.plist /Library/LaunchDaemons/com.capslock_to_backspace.plist
+configure_user_defaults() {
+    install_launchagent ./macos/capslock_to_backspace.sh ./macos/com.capslock_to_backspace.plist
 
-    install_launchdaemon \
-        ./macos/sleep_on_lid_close.sh /Library/Scripts/sleep_on_lid_close.sh \
-        ./macos/com.julsh.sleeponlidclose.plist /Library/LaunchDaemons/com.julsh.sleeponlidclose.plist
-
-    # Set the location to the Downloads folder
     defaults write com.apple.screencapture location -string "${HOME}/Downloads"
     defaults write NSGlobalDomain AppleShowAllExtensions -bool true
     defaults write com.apple.dock show-recents -int 0
@@ -105,6 +127,18 @@ configure_os() {
     </dict>"
 
     killall Dock 2>/dev/null || true
+}
+
+configure_system_defaults() {
+    # Clean up old LaunchDaemon for capslock (now a user LaunchAgent)
+    if [[ -f /Library/LaunchDaemons/com.capslock_to_backspace.plist ]]; then
+        sudo launchctl unload /Library/LaunchDaemons/com.capslock_to_backspace.plist 2>/dev/null || true
+        sudo rm -f /Library/LaunchDaemons/com.capslock_to_backspace.plist /Library/Scripts/capslock_to_backspace.sh
+    fi
+
+    install_launchdaemon \
+        ./macos/sleep_on_lid_close.sh /Library/Scripts/sleep_on_lid_close.sh \
+        ./macos/com.julsh.sleeponlidclose.plist /Library/LaunchDaemons/com.julsh.sleeponlidclose.plist
 
     sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText \
         "—ฅ/ᐠ. ̫.ᐟ\\\ฅ— if it is lost, pls return this computer to lost@jul.sh"
@@ -120,9 +154,15 @@ main() {
 
     install_desktop_apps
     build_spotlight_scripts
-    echo "Configuring OS settings (requires sudo)..."
-    sudo -v
-    configure_os
+    echo "Configuring user defaults..."
+    configure_user_defaults
+    if [[ "${NO_SUDO:-}" = "1" ]]; then
+        echo "Skipping system configuration (--no-sudo)"
+    else
+        echo "Configuring system defaults (requires sudo)..."
+        sudo -v
+        configure_system_defaults
+    fi
 }
 
 main "$@"
