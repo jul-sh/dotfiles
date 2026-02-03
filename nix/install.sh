@@ -48,11 +48,23 @@ install_nix() {
         fi
     else
         # Try official installer with multi-user mode first
-        if ! curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --daemon --yes --nix-extra-conf-file "$extra_conf"; then
-            # Fallback to single-user mode
-            if ! curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --no-daemon --yes --nix-extra-conf-file "$extra_conf"; then
-                die "Nix installation failed"
-            fi
+        if curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --daemon --yes --nix-extra-conf-file "$extra_conf"; then
+            : # success
+        else
+            echo ""
+            echo "Multi-user installation failed (requires sudo)."
+            printf "Continue with single-user installation? [y/N]: "
+            read -r choice < /dev/tty || choice=""
+            case "$choice" in
+                y|Y)
+                    if ! curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --no-daemon --yes --nix-extra-conf-file "$extra_conf"; then
+                        die "Nix installation failed"
+                    fi
+                    ;;
+                *)
+                    die "Installation aborted"
+                    ;;
+            esac
         fi
     fi
 
