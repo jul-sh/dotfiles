@@ -1,6 +1,6 @@
 # dotfiles
 
-Reproducible dev environment with Nix + Home Manager. l
+Reproducible dev environment with Nix + Home Manager. 
 
 ## Install
 
