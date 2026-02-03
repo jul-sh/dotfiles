@@ -80,6 +80,15 @@ ensure_repo() {
     update_existing_repo || clone_repo
 }
 
+ensure_nix_conf() {
+    conf_dir="$HOME/.config/nix"
+    conf_file="$conf_dir/nix.conf"
+    mkdir -p "$conf_dir"
+    if [ ! -f "$conf_file" ] || ! grep -q "experimental-features" "$conf_file"; then
+        echo "experimental-features = nix-command flakes" >> "$conf_file"
+    fi
+}
+
 main() {
     require_git
     ensure_checkout_dir
@@ -87,8 +96,10 @@ main() {
     cd "$CHECKOUT_DIR"
 
     if ! command -v nix >/dev/null 2>&1; then
-        sh ./nix/install.sh
+        bash ./nix/install.sh
     fi
+
+    ensure_nix_conf
 
     if [ "${IN_NIX_SHELL:-}" = "1" ]; then
         bash ./nix/setup-internal.sh
