@@ -94,22 +94,17 @@ attach() {
         TARGET="${DIR_NAME}_${PATH_HASH}"
     fi
 
-    # 2. Check for an EXACT match first
-    if zellij list-sessions 2>/dev/null | grep -q "^$TARGET "; then
-        zellij attach "$TARGET"
-        return
-    fi
+    # Strip ANSI codes from session list for reliable matching
+    SESSIONS=$(zellij list-sessions 2>/dev/null | perl -pe 's/\e\[\d*(;\d+)*m//g')
 
-    # 3. Check for a FUZZY match (e.g., "clipkitty" matches "clipkitty_1234")
-    # We take the first match found in the list
-    FUZZY_MATCH=$(zellij list-sessions 2>/dev/null | grep "^$TARGET\_" | head -n 1 | awk '{print $1}')
+    # 2. Check for a FUZZY match (e.g., "clipkitty" matches "clipkitty_1234")
+    FUZZY_MATCH=$(echo "$SESSIONS" | grep "^${TARGET}_" | head -n 1 | awk '{print $1}')
 
     if [ -n "$FUZZY_MATCH" ]; then
         echo "Found existing session: $FUZZY_MATCH"
         zellij attach "$FUZZY_MATCH"
     else
-        # 4. If nothing found, create new
-        echo "Starting new session: $TARGET"
-        zellij -s "$TARGET"
+        # 3. Attach to existing session or create new
+        zellij attach -c "$TARGET"
     fi
 }
