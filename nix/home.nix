@@ -4,10 +4,10 @@
 let
   iosevka-charon = pkgs.stdenvNoCC.mkDerivation rec {
     pname = "iosevka-charon";
-    version = "pre-b3162d9da3c6c56995cbc764ff8d6fe025b6af9b"; # iosevka-charon
+    version = "1.0.0"; # iosevka-charon
     src = pkgs.fetchurl {
       url = "https://github.com/jul-sh/iosevka-charon/releases/download/${version}/iosevka-charon.zip";
-      sha256 = "d5edb8cf50f9fe3f1ceef08f27498e070cc77deef92c0e52756fc2d399367dc6"; # iosevka-charon
+      sha256 = "6299b20a152aebea48dde5d5a1556d29118216b2becba67bc87f3414b4630c14"; # iosevka-charon
     };
     nativeBuildInputs = [ pkgs.unzip ];
     sourceRoot = ".";
