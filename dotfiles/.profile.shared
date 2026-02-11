@@ -34,42 +34,29 @@ if command -v python3 &> /dev/null; then
 fi
 
 
-# A smart zellij attach/create function.
-# Usage:
-#   attach          - Attaches to a session for the current directory, or creates one.
-#   attach <name>   - Attaches to or creates a session with a specific name.
 attach() {
-  # If an argument is provided, use it as the session name directly.
-  if [[ -n "$1" ]]; then
-    zellij attach "$1" || zellij --session "$1"
-    return
-  fi
+    # 1. Determine the target name
+    if [ -n "$1" ]; then
+        TARGET="$1"
+    else
+        DIR_NAME=$(basename "$PWD")
+        PATH_HASH=$(echo "$PWD" | md5sum | cut -c1-4)
+        TARGET="${DIR_NAME}_${PATH_HASH}"
+    fi
 
-  # --- ZSH Version ---
-  # Uses ZSH's built-in parameter expansion for conciseness.
-  if [ -n "$ZSH_VERSION" ]; then
-    local parent_dir="${PWD:h:t}"   # Parent directory's name
-    local current_dir="${PWD:t}"   # Current directory's name
-    local sanitized_path=$(echo "$PWD" | tr '/' '_') # Full path with '/' -> '_'
+    # Strip ANSI codes from session list for reliable matching
+    SESSIONS=$(zellij list-sessions 2>/dev/null | perl -pe 's/\e\[\d*(;\d+)*m//g')
 
-  # --- Bash Version ---
-  # Uses standard commands for compatibility.
-  elif [ -n "$BASH_VERSION" ]; then
-    local current_dir=$(basename "$(pwd)")
-    local parent_dir=$(basename "$(dirname "$(pwd)")")
-    local sanitized_path=$(pwd | tr '/' '_') # Full path with '/' -> '_'
+    # 2. Check for a FUZZY match (e.g., "clipkitty" matches "clipkitty_1234")
+    FUZZY_MATCH=$(echo "$SESSIONS" | grep "^${TARGET}_" | head -n 1 | awk '{print $1}')
 
-  else
-    echo "Unsupported shell. This function works with ZSH or Bash."
-    return 1
-  fi
-
-  # Combine them into a descriptive and unique session name.
-  # Example: projects-my-app--_home_user_projects_my-app
-  local session_name="${parent_dir}-${current_dir}--${sanitized_path}"
-
-  # Attach to the session if it exists, otherwise create it with the new name.
-  zellij attach "$session_name" || zellij --session "$session_name"
+    if [ -n "$FUZZY_MATCH" ]; then
+        echo "Found existing session: $FUZZY_MATCH"
+        zellij attach "$FUZZY_MATCH"
+    else
+        # 3. Attach to existing session or create new
+        zellij attach -c "$TARGET"
+    fi
 }
 
 # Source utils if they exist

@@ -62,44 +62,6 @@ install_desktop_apps() {
     fi
 }
 
-install_fonts() {
-    echo "Installing fonts..."
-    local lockfile="./external.lock.json"
-    local target_dir
-
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        target_dir="$HOME/Library/Fonts"
-    else
-        target_dir="$HOME/.local/share/fonts"
-    fi
-
-    local url sha256 tmp_dir zip_path actual_sha256
-    url=$(jq -r '.["iosevka-charon"].url' "$lockfile")
-    sha256=$(jq -r '.["iosevka-charon"].sha256' "$lockfile")
-
-    tmp_dir="$(mktemp -d)"
-    zip_path="${tmp_dir}/fonts.zip"
-
-    curl -fsSL "$url" -o "$zip_path"
-    actual_sha256=$(shasum -a 256 "$zip_path" | awk '{print $1}')
-    if [[ "$actual_sha256" != "$sha256" ]]; then
-        rm -rf "$tmp_dir"
-        die "SHA256 mismatch for iosevka-charon: expected $sha256, got $actual_sha256"
-    fi
-
-    unzip -q "$zip_path" -d "$tmp_dir"
-    mkdir -p "$target_dir"
-    find "$tmp_dir" -name "*.ttf" -o -name "*.otf" | while read -r font; do
-        cp -f "$font" "$target_dir/$(basename "$font")"
-    done
-
-    rm -rf "$tmp_dir"
-
-    if [[ "$OSTYPE" == "linux-gnu"* ]] && command -v fc-cache &>/dev/null; then
-        fc-cache -f
-    fi
-}
-
 install_cargo_tools() {
     echo "Installing cargo tools..."
     if command -v rustup &>/dev/null; then
@@ -207,7 +169,6 @@ run_setup() {
     else
         install_desktop_apps
     fi
-    install_fonts
     install_cargo_tools
     install_git_hooks
     echo "✓ Setup complete. Please restart your terminal for changes to take effect."

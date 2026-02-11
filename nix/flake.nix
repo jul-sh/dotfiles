@@ -3,12 +3,12 @@
 
   inputs = {
     # Nix Packages collection (stick to the latest stable release for better cache hits)
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
 
     # Home Manager for managing user environments
     home-manager = {
       # Track the matching Home Manager release to avoid rebuilding Nix from source
-      url = "github:nix-community/home-manager/release-24.05";
+      url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
