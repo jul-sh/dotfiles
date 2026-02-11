@@ -46,11 +46,16 @@ apply_nix_config() {
     echo "Applying Home Manager configuration..."
     ensure_local_host_flake
     local nix_config=$'experimental-features = nix-command flakes\nsubstituters = https://cache.nixos.org/\ntrusted-substituters = https://cache.nixos.org/\n'
-    local flake_ref="./nix#${USER}@$(get_nix_system)"
+    local config_name="${USER}@$(get_nix_system)"
     local local_host_override="--override-input local-host path:./nix/hosts/local"
+    # Build the activation package directly (avoids the home-manager CLI
+    # and its inetutils dependency which fails to compile on macOS).
     NIX_CONFIG="$nix_config" \
-    nix run --no-write-lock-file $local_host_override "./nix#home-manager" -- \
-        switch --flake "$flake_ref" --no-write-lock-file $local_host_override -b backup
+    nix build --no-write-lock-file $local_host_override \
+        "./nix#homeConfigurations.\"${config_name}\".activationPackage" \
+        --out-link ./result
+    ./result/activate
+    rm -f ./result
 }
 
 install_desktop_apps() {

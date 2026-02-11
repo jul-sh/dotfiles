@@ -59,6 +59,7 @@ in
   # --- 3. Fonts ---
   fonts.fontconfig.enable = pkgs.stdenv.isLinux; # Ensures font cache is updated on Linux
 
-  # Allow Home Manager to manage itself
-  programs.home-manager.enable = true;
+  # Home Manager is invoked via `nix build` + activate (see setup-internal.sh),
+  # so the CLI doesn't need to be in PATH.
+  programs.home-manager.enable = false;
 }

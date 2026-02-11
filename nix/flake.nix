@@ -47,17 +47,7 @@
       # homeDirectory is set via local-host input (overridden by setup.sh at runtime)
       mkHomeConfiguration = system: username:
         let
-          # Fix inetutils build on macOS (gnulib clang format-nonliteral error)
-          pkgs = import nixpkgs {
-            inherit system;
-            overlays = nixpkgs.lib.optionals (nixpkgs.lib.hasSuffix "-darwin" system) [
-              (final: prev: {
-                inetutils = prev.inetutils.overrideAttrs (old: {
-                  hardeningDisable = (old.hardeningDisable or []) ++ [ "format" ];
-                });
-              })
-            ];
-          };
+          pkgs = nixpkgs.legacyPackages.${system};
           # Fallback home directory (used when local-host doesn't override)
           defaultHome = if nixpkgs.lib.hasSuffix "-darwin" system
             then "/Users/${username}"
@@ -96,23 +86,6 @@
     {
       # Expose the generated configurations to home-manager.
       homeConfigurations = userConfigurations;
-
-      # Expose the packaged home-manager CLI for convenience.
-      packages = forAllSystems (system: {
-        home-manager = home-manager.packages.${system}.home-manager;
-      });
-
-      # Make home-manager available as a runnable app for each system.
-      apps = forAllSystems (system: {
-        default = {
-          type = "app";
-          program = "${home-manager.packages.${system}.home-manager}/bin/home-manager";
-        };
-        home-manager = {
-          type = "app";
-          program = "${home-manager.packages.${system}.home-manager}/bin/home-manager";
-        };
-      });
 
       # Dev shell with tools needed for setup scripts
       devShells = forAllSystems (system:
