@@ -83,3 +83,33 @@ fi
 if command -v starship &> /dev/null; then
   eval "$(starship init zsh)"
 fi
+
+attach() {
+    # 1. Determine the target name
+    if [ -n "$1" ]; then
+        TARGET="$1"
+    else
+        DIR_NAME=$(basename "$PWD")
+        PATH_HASH=$(echo "$PWD" | md5sum | cut -c1-4)
+        TARGET="${DIR_NAME}_${PATH_HASH}"
+    fi
+
+    # 2. Check for an EXACT match first
+    if zellij list-sessions 2>/dev/null | grep -q "^$TARGET "; then
+        zellij attach "$TARGET"
+        return
+    fi
+
+    # 3. Check for a FUZZY match (e.g., "clipkitty" matches "clipkitty_1234")
+    # We take the first match found in the list
+    FUZZY_MATCH=$(zellij list-sessions 2>/dev/null | grep "^$TARGET\_" | head -n 1 | awk '{print $1}')
+
+    if [ -n "$FUZZY_MATCH" ]; then
+        echo "Found existing session: $FUZZY_MATCH"
+        zellij attach "$FUZZY_MATCH"
+    else
+        # 4. If nothing found, create new
+        echo "Starting new session: $TARGET"
+        zellij -s "$TARGET"
+    fi
+}
