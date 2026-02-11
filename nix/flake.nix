@@ -53,9 +53,7 @@
             overlays = nixpkgs.lib.optionals (nixpkgs.lib.hasSuffix "-darwin" system) [
               (final: prev: {
                 inetutils = prev.inetutils.overrideAttrs (old: {
-                  env = (old.env or {}) // {
-                    NIX_CFLAGS_COMPILE = (old.env.NIX_CFLAGS_COMPILE or "") + " -Wno-error=format-security";
-                  };
+                  hardeningDisable = (old.hardeningDisable or []) ++ [ "format" ];
                 });
               })
             ];
