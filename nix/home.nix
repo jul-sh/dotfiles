@@ -37,7 +37,6 @@ in
     direnv
     nodejs
     iosevka-charon
-    bitwarden-cli
   ];
 
   # --- 2. Dotfiles ---
