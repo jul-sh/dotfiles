@@ -175,6 +175,9 @@ run_setup() {
         install_desktop_apps
     fi
     install_cargo_tools
+    if command -v bw &>/dev/null; then
+        bw config server https://vault.bitwarden.eu
+    fi
     install_git_hooks
     echo "✓ Setup complete. Please restart your terminal for changes to take effect."
 }
