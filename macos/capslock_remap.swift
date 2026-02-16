@@ -11,13 +11,16 @@ func hidutil(_ json: String) {
     p.waitUntilExit()
 }
 
-let nc = DistributedNotificationCenter.default()
-for name in ["com.apple.screenIsUnlocked", "com.apple.sessionDidBecomeActive"] {
-    nc.addObserver(forName: .init(name), object: nil, queue: .main) { _ in hidutil(remap) }
+if CommandLine.arguments.contains("--oneshot") {
+    hidutil(remap)
+} else {
+    let nc = DistributedNotificationCenter.default()
+    for name in ["com.apple.screenIsUnlocked", "com.apple.sessionDidBecomeActive"] {
+        nc.addObserver(forName: .init(name), object: nil, queue: .main) { _ in hidutil(remap) }
+    }
+    for name in ["com.apple.screenIsLocked", "com.apple.sessionDidResignActive"] {
+        nc.addObserver(forName: .init(name), object: nil, queue: .main) { _ in hidutil(clear) }
+    }
+    hidutil(remap)
+    RunLoop.current.run()
 }
-for name in ["com.apple.screenIsLocked", "com.apple.sessionDidResignActive"] {
-    nc.addObserver(forName: .init(name), object: nil, queue: .main) { _ in hidutil(clear) }
-}
-
-hidutil(remap)
-RunLoop.current.run()

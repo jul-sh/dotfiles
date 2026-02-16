@@ -115,6 +115,63 @@ PLISTEOF
     launchctl load -w "$plist_dst" 2>/dev/null || true
 }
 
+install_capslock_remap_system() {
+    local swift_src="./macos/capslock_remap.swift"
+    local bin_dst="/Library/Scripts/capslock-remap"
+    local plist_dst="/Library/LaunchDaemons/com.julsh.capslock_remap.plist"
+    local label="com.julsh.capslock_remap"
+
+    # Compile to temp then install with sudo
+    local tmp_bin
+    tmp_bin=$(mktemp)
+    if [[ "$swift_src" -nt "$bin_dst" ]] || [[ ! -f "$bin_dst" ]]; then
+        echo "Compiling capslock remap daemon..."
+        swiftc -O "$swift_src" -o "$tmp_bin"
+        sudo cp "$tmp_bin" "$bin_dst"
+        sudo chmod +x "$bin_dst"
+        rm -f "$tmp_bin"
+    fi
+
+    # Clean up old shell-script daemon if present
+    local old_daemon="/Library/LaunchDaemons/com.capslock_to_backspace.plist"
+    if [[ -f "$old_daemon" ]]; then
+        sudo launchctl unload "$old_daemon" 2>/dev/null || true
+        sudo rm -f "$old_daemon"
+        sudo rm -f /Library/Scripts/capslock_to_backspace.sh
+    fi
+
+    # Generate plist
+    local plist_content
+    plist_content=$(cat <<PLISTEOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>${label}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>${bin_dst}</string>
+        <string>--oneshot</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>LaunchOnlyOnce</key>
+    <true/>
+</dict>
+</plist>
+PLISTEOF
+    )
+
+    if [[ "$plist_content" != "$(sudo cat "$plist_dst" 2>/dev/null)" ]]; then
+        echo "Installing capslock remap daemon..."
+        sudo launchctl unload "$plist_dst" 2>/dev/null || true
+        echo "$plist_content" | sudo tee "$plist_dst" > /dev/null
+    fi
+
+    sudo launchctl load -w "$plist_dst" 2>/dev/null || true
+}
+
 install_launchagent() {
     local script_src="$1" plist_src="$2"
     local script_name plist_name script_dst plist_dst
@@ -204,10 +261,8 @@ configure_system_defaults() {
     local sleep_agent="$HOME/Library/LaunchAgents/com.julsh.sleeponlidclose.plist"
 
     if [[ "$SETUP_SCOPE" == "system" ]]; then
-        # Install as LaunchDaemons (all users)
-        install_launchdaemon \
-            ./macos/capslock_to_backspace.sh /Library/Scripts/capslock_to_backspace.sh \
-            ./macos/com.capslock_to_backspace.plist /Library/LaunchDaemons/com.capslock_to_backspace.plist
+        # Install capslock remap as LaunchDaemon (all users, oneshot)
+        install_capslock_remap_system
         install_launchdaemon \
             ./macos/sleep_on_lid_close.sh /Library/Scripts/sleep_on_lid_close.sh \
             ./macos/com.julsh.sleeponlidclose.plist /Library/LaunchDaemons/com.julsh.sleeponlidclose.plist
@@ -221,13 +276,13 @@ configure_system_defaults() {
         rm -f "$HOME/.local/bin/capslock_to_backspace.sh" "$HOME/.local/bin/capslock-remap" "$HOME/.local/bin/sleep_on_lid_close.sh"
     else
         # Clean up system-wide LaunchDaemons if present
-        for daemon in com.capslock_to_backspace.plist com.julsh.sleeponlidclose.plist; do
+        for daemon in com.capslock_to_backspace.plist com.julsh.capslock_remap.plist com.julsh.sleeponlidclose.plist; do
             if [[ -f "/Library/LaunchDaemons/$daemon" ]]; then
                 sudo launchctl unload "/Library/LaunchDaemons/$daemon" 2>/dev/null || true
                 sudo rm -f "/Library/LaunchDaemons/$daemon"
             fi
         done
-        sudo rm -f /Library/Scripts/capslock_to_backspace.sh /Library/Scripts/sleep_on_lid_close.sh
+        sudo rm -f /Library/Scripts/capslock_to_backspace.sh /Library/Scripts/capslock-remap /Library/Scripts/sleep_on_lid_close.sh
     fi
 
     sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText \
