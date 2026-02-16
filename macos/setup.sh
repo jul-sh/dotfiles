@@ -64,6 +64,57 @@ build_spotlight_scripts() {
     fi
 }
 
+install_capslock_remap() {
+    local swift_src="./macos/capslock_remap.swift"
+    local bin_dst="$HOME/.local/bin/capslock-remap"
+    local plist_dst="$HOME/Library/LaunchAgents/com.julsh.capslock_remap.plist"
+    local label="com.julsh.capslock_remap"
+
+    mkdir -p "$HOME/.local/bin" "$HOME/Library/LaunchAgents"
+
+    # Compile if source is newer or binary missing
+    if [[ "$swift_src" -nt "$bin_dst" ]] || [[ ! -f "$bin_dst" ]]; then
+        echo "Compiling capslock remap agent..."
+        swiftc -O "$swift_src" -o "$bin_dst"
+    fi
+
+    # Clean up old one-shot agent if present
+    local old_agent="$HOME/Library/LaunchAgents/com.capslock_to_backspace.plist"
+    if [[ -f "$old_agent" ]]; then
+        launchctl unload "$old_agent" 2>/dev/null || true
+        rm -f "$old_agent"
+        rm -f "$HOME/.local/bin/capslock_to_backspace.sh"
+    fi
+
+    # Generate plist
+    local plist_content
+    plist_content=$(cat <<PLISTEOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>${label}</string>
+    <key>Program</key>
+    <string>${bin_dst}</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
+PLISTEOF
+    )
+
+    if [[ "$plist_content" != "$(cat "$plist_dst" 2>/dev/null)" ]]; then
+        echo "Installing capslock remap agent..."
+        launchctl unload "$plist_dst" 2>/dev/null || true
+        echo "$plist_content" > "$plist_dst"
+    fi
+
+    launchctl load -w "$plist_dst" 2>/dev/null || true
+}
+
 install_launchagent() {
     local script_src="$1" plist_src="$2"
     local script_name plist_name script_dst plist_dst
@@ -118,7 +169,7 @@ install_launchdaemon() {
 
 configure_user_defaults() {
     if [[ "$SETUP_SCOPE" == "user" ]]; then
-        install_launchagent ./macos/capslock_to_backspace.sh ./macos/com.capslock_to_backspace.plist
+        install_capslock_remap
         install_launchagent ./macos/sleep_on_lid_close.sh ./macos/com.julsh.sleeponlidclose.plist
     fi
 
@@ -149,6 +200,7 @@ configure_user_defaults() {
 
 configure_system_defaults() {
     local capslock_agent="$HOME/Library/LaunchAgents/com.capslock_to_backspace.plist"
+    local capslock_remap_agent="$HOME/Library/LaunchAgents/com.julsh.capslock_remap.plist"
     local sleep_agent="$HOME/Library/LaunchAgents/com.julsh.sleeponlidclose.plist"
 
     if [[ "$SETUP_SCOPE" == "system" ]]; then
@@ -160,13 +212,13 @@ configure_system_defaults() {
             ./macos/sleep_on_lid_close.sh /Library/Scripts/sleep_on_lid_close.sh \
             ./macos/com.julsh.sleeponlidclose.plist /Library/LaunchDaemons/com.julsh.sleeponlidclose.plist
         # Clean up per-user LaunchAgents if present
-        for agent in "$capslock_agent" "$sleep_agent"; do
+        for agent in "$capslock_agent" "$capslock_remap_agent" "$sleep_agent"; do
             if [[ -f "$agent" ]]; then
                 launchctl unload "$agent" 2>/dev/null || true
                 rm -f "$agent"
             fi
         done
-        rm -f "$HOME/.local/bin/capslock_to_backspace.sh" "$HOME/.local/bin/sleep_on_lid_close.sh"
+        rm -f "$HOME/.local/bin/capslock_to_backspace.sh" "$HOME/.local/bin/capslock-remap" "$HOME/.local/bin/sleep_on_lid_close.sh"
     else
         # Clean up system-wide LaunchDaemons if present
         for daemon in com.capslock_to_backspace.plist com.julsh.sleeponlidclose.plist; do
