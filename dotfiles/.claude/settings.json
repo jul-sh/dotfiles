@@ -3,5 +3,10 @@
     "commit": "",
     "pr": ""
   },
-  "model": "haiku"
+  "model": "opus",
+  "skipDangerousModePermissionPrompt": true,
+  "statusLine": {
+    "command": "/Users/julsh/.claude/statusline-kawaii.sh",
+    "type": "command"
+  }
 }
