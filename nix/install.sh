@@ -41,7 +41,7 @@ install_nix() {
     echo "experimental-features = nix-command flakes" > "$extra_conf"
     trap "rm -f '$extra_conf'" EXIT
 
-    if [ "${NO_SUDO:-}" = "1" ]; then
+    if [ "${SETUP_SCOPE:-}" = "user" ]; then
         # Single-user mode only (no sudo)
         if ! curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --no-daemon --yes --nix-extra-conf-file "$extra_conf"; then
             die "Nix installation failed"

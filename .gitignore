@@ -10,3 +10,5 @@ dotfiles/.claude/*
 
 dotfiles/.codex/*
 !dotfiles/.codex/AGENTS.md
+
+.setup_scope

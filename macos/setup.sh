@@ -8,6 +8,21 @@ cd "$(dirname "$0")/.."
 
 die() { echo "error: $1" >&2; exit 1; }
 
+SCOPE_FILE=".setup_scope"
+
+resolve_setup_scope() {
+    if [[ -n "${SETUP_SCOPE:-}" ]]; then
+        # Explicit env var: use it and persist
+        echo "$SETUP_SCOPE" > "$SCOPE_FILE"
+    elif [[ -f "$SCOPE_FILE" ]]; then
+        SETUP_SCOPE=$(<"$SCOPE_FILE")
+    else
+        SETUP_SCOPE=system
+        echo "$SETUP_SCOPE" > "$SCOPE_FILE"
+    fi
+    echo "Setup scope: $SETUP_SCOPE"
+}
+
 install_desktop_apps() {
     echo "Installing desktop apps..."
     echo "Ensuring desktop apps are managed by Homebrew..."
@@ -102,7 +117,10 @@ install_launchdaemon() {
 }
 
 configure_user_defaults() {
-    install_launchagent ./macos/capslock_to_backspace.sh ./macos/com.capslock_to_backspace.plist
+    if [[ "$SETUP_SCOPE" == "user" ]]; then
+        install_launchagent ./macos/capslock_to_backspace.sh ./macos/com.capslock_to_backspace.plist
+        install_launchagent ./macos/sleep_on_lid_close.sh ./macos/com.julsh.sleeponlidclose.plist
+    fi
 
     defaults write com.apple.screencapture location -string "${HOME}/Downloads"
     defaults write NSGlobalDomain AppleShowAllExtensions -bool true
@@ -130,15 +148,35 @@ configure_user_defaults() {
 }
 
 configure_system_defaults() {
-    # Clean up old LaunchDaemon for capslock (now a user LaunchAgent)
-    if [[ -f /Library/LaunchDaemons/com.capslock_to_backspace.plist ]]; then
-        sudo launchctl unload /Library/LaunchDaemons/com.capslock_to_backspace.plist 2>/dev/null || true
-        sudo rm -f /Library/LaunchDaemons/com.capslock_to_backspace.plist /Library/Scripts/capslock_to_backspace.sh
-    fi
+    local capslock_agent="$HOME/Library/LaunchAgents/com.capslock_to_backspace.plist"
+    local sleep_agent="$HOME/Library/LaunchAgents/com.julsh.sleeponlidclose.plist"
 
-    install_launchdaemon \
-        ./macos/sleep_on_lid_close.sh /Library/Scripts/sleep_on_lid_close.sh \
-        ./macos/com.julsh.sleeponlidclose.plist /Library/LaunchDaemons/com.julsh.sleeponlidclose.plist
+    if [[ "$SETUP_SCOPE" == "system" ]]; then
+        # Install as LaunchDaemons (all users)
+        install_launchdaemon \
+            ./macos/capslock_to_backspace.sh /Library/Scripts/capslock_to_backspace.sh \
+            ./macos/com.capslock_to_backspace.plist /Library/LaunchDaemons/com.capslock_to_backspace.plist
+        install_launchdaemon \
+            ./macos/sleep_on_lid_close.sh /Library/Scripts/sleep_on_lid_close.sh \
+            ./macos/com.julsh.sleeponlidclose.plist /Library/LaunchDaemons/com.julsh.sleeponlidclose.plist
+        # Clean up per-user LaunchAgents if present
+        for agent in "$capslock_agent" "$sleep_agent"; do
+            if [[ -f "$agent" ]]; then
+                launchctl unload "$agent" 2>/dev/null || true
+                rm -f "$agent"
+            fi
+        done
+        rm -f "$HOME/.local/bin/capslock_to_backspace.sh" "$HOME/.local/bin/sleep_on_lid_close.sh"
+    else
+        # Clean up system-wide LaunchDaemons if present
+        for daemon in com.capslock_to_backspace.plist com.julsh.sleeponlidclose.plist; do
+            if [[ -f "/Library/LaunchDaemons/$daemon" ]]; then
+                sudo launchctl unload "/Library/LaunchDaemons/$daemon" 2>/dev/null || true
+                sudo rm -f "/Library/LaunchDaemons/$daemon"
+            fi
+        done
+        sudo rm -f /Library/Scripts/capslock_to_backspace.sh /Library/Scripts/sleep_on_lid_close.sh
+    fi
 
     sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText \
         "—ฅ/ᐠ. ̫.ᐟ\\\ฅ— if it is lost, pls return this computer to lost@jul.sh"
@@ -152,12 +190,13 @@ main() {
         die "macos/setup.sh does not accept arguments"
     fi
 
+    resolve_setup_scope
     install_desktop_apps
     build_spotlight_scripts
     echo "Configuring user defaults..."
     configure_user_defaults
-    if [[ "${NO_SUDO:-}" = "1" ]]; then
-        echo "Skipping system configuration (--no-sudo)"
+    if [[ "$SETUP_SCOPE" == "user" ]]; then
+        echo "Skipping system configuration (SETUP_SCOPE=user)"
     else
         echo "Configuring system defaults (requires sudo)..."
         if sudo -v; then
