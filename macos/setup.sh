@@ -32,7 +32,7 @@ install_desktop_apps() {
         # Check if installed
         if ! brew list --cask | grep -q "^${base_name}$"; then
             echo "Installing $cask..."
-            brew install --cask "$cask"
+            brew install --cask "$cask" || echo "  warning: failed to install $cask"
         else
             # Check if outdated
             if brew outdated --cask --quiet "$cask" >/dev/null 2>&1; then
@@ -43,11 +43,11 @@ install_desktop_apps() {
                             sleep 60
                         done
                         echo "  $base_name closed. Starting Homebrew update..."
-                        brew upgrade --cask "$cask"
+                        brew upgrade --cask "$cask" || echo "  warning: failed to update $cask"
                     ) & disown
                 else
                     echo "Updating $base_name..."
-                    brew upgrade --cask "$cask" || true
+                    brew upgrade --cask "$cask" || echo "  warning: failed to update $cask"
                 fi
             else
                 echo "  $base_name is up to date."
