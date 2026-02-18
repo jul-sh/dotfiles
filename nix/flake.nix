@@ -91,7 +91,7 @@
       devShells = forAllSystems (system:
         let pkgs = nixpkgs.legacyPackages.${system};
         in {
-          default = pkgs.mkShellNoCC {
+          default = pkgs.mkShell {
             packages = with pkgs; [
               coreutils
               gnugrep
@@ -101,6 +101,8 @@
               curl
               jq
               unzip
+            ] ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+              pkgs.swiftPackages.swift
             ];
           };
         });
