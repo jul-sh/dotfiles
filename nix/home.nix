@@ -32,6 +32,7 @@ in
     zellij
     aichat
     git
+    git-lfs
     gh
     rustup
     direnv
