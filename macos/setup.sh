@@ -75,7 +75,7 @@ install_capslock_remap() {
     # Compile if source is newer or binary missing
     if [[ "$swift_src" -nt "$bin_dst" ]] || [[ ! -f "$bin_dst" ]]; then
         echo "Compiling capslock remap agent..."
-        swiftc -O "$swift_src" -o "$bin_dst"
+        env -u SDKROOT swiftc -O "$swift_src" -o "$bin_dst"
     fi
 
     # Clean up old one-shot agent if present
@@ -126,7 +126,7 @@ install_capslock_remap_system() {
     tmp_bin=$(mktemp)
     if [[ "$swift_src" -nt "$bin_dst" ]] || [[ ! -f "$bin_dst" ]]; then
         echo "Compiling capslock remap daemon..."
-        swiftc -O "$swift_src" -o "$tmp_bin"
+        env -u SDKROOT swiftc -O "$swift_src" -o "$tmp_bin"
         sudo cp "$tmp_bin" "$bin_dst"
         sudo chmod +x "$bin_dst"
         rm -f "$tmp_bin"
