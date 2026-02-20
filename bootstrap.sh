@@ -35,41 +35,48 @@ update_existing_repo() {
     ref="${TARGET_REF:-${current_branch:-${default_branch:-main}}}"
 
     git -C "$CHECKOUT_DIR" checkout "$ref" >/dev/null 2>&1 || true
+    # Check for local changes before pulling
+    if ! git -C "$CHECKOUT_DIR" diff --quiet || ! git -C "$CHECKOUT_DIR" diff --staged --quiet; then
+        echo "################################################################################"
+        echo "Local changes detected - stashing before pull"
+        echo "################################################################################"
+        echo
+        git -C "$CHECKOUT_DIR" diff --stat
+        git -C "$CHECKOUT_DIR" diff --staged --stat
+        echo
+        git -C "$CHECKOUT_DIR" stash push -m "bootstrap-auto-stash"
+    fi
+
     if ! git -C "$CHECKOUT_DIR" pull --ff-only origin "$ref"; then
-        echo "################################################################################"
-        echo "ERROR: Fast-forward pull failed in $CHECKOUT_DIR"
-        echo "This usually happens when there are uncommitted local changes."
-        echo "################################################################################"
-        echo
-        echo "Local changes:"
-        echo "----------------------------------------"
-        git -C "$CHECKOUT_DIR" diff
-        git -C "$CHECKOUT_DIR" diff --staged
-        echo "----------------------------------------"
-        echo
-        echo "How would you like to proceed?"
-        echo " [r] Reset to upstream (discard local changes shown above)"
-        echo " [c] Commit local changes, then retry pull"
-        echo " [m] Manual resolution (exit script)"
-        printf "Option [r/c/M]: "
-        read -r choice < /dev/tty || true
-        case "$choice" in
-            r|R)
-                echo "Resetting to origin/$ref..."
-                git -C "$CHECKOUT_DIR" reset --hard "origin/$ref"
-                ;;
-            c|C)
-                echo "Committing local changes..."
-                git -C "$CHECKOUT_DIR" add -A
-                git -C "$CHECKOUT_DIR" commit -m "local changes"
-                if ! git -C "$CHECKOUT_DIR" pull --rebase origin "$ref"; then
-                    die "Pull with rebase failed. Please resolve manually in $CHECKOUT_DIR"
-                fi
-                ;;
-            *)
-                die "Aborting. Please resolve in $CHECKOUT_DIR and re-run."
-                ;;
-        esac
+        die "Fast-forward pull failed. Please resolve manually in $CHECKOUT_DIR"
+    fi
+
+    # Reapply stashed changes if any
+    if git -C "$CHECKOUT_DIR" stash list | grep -q "bootstrap-auto-stash"; then
+        echo "Reapplying local changes..."
+        if ! git -C "$CHECKOUT_DIR" stash pop; then
+            echo "################################################################################"
+            echo "ERROR: Could not reapply local changes - conflicts detected"
+            echo "################################################################################"
+            echo
+            echo "Your changes are still in the stash. To see them:"
+            echo "  git -C $CHECKOUT_DIR stash show -p"
+            echo
+            echo "How would you like to proceed?"
+            echo " [d] Drop stashed changes and continue"
+            echo " [m] Manual resolution (exit script)"
+            printf "Option [d/M]: "
+            read -r choice < /dev/tty || true
+            case "$choice" in
+                d|D)
+                    echo "Dropping stashed changes..."
+                    git -C "$CHECKOUT_DIR" stash drop
+                    ;;
+                *)
+                    die "Aborting. Resolve conflicts in $CHECKOUT_DIR and run 'git stash drop' when done."
+                    ;;
+            esac
+        fi
     fi
     return 0
 }
