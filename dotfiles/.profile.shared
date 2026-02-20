@@ -12,10 +12,19 @@ if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
   . "$HOME/.nix-profile/etc/profile.d/nix.sh"
 fi
 
-# ai <task> - Quick Claude helper (auto-accepts, exits when done)
+# ai <task> - Quick AI helper (auto-accepts, exits when done)
 # Use noglob to allow unquoted special chars: ai kill the process on port 6666
 alias ai='noglob _ai'
-_ai() { claude -p --model haiku --dangerously-skip-permissions --max-turns 10 "$*"; }
+_ai() {
+    if command -v claude &>/dev/null; then
+        claude -p --model haiku --dangerously-skip-permissions --max-turns 10 "$*"
+    elif command -v gemini &>/dev/null; then
+        gemini -p "$*"
+    else
+        echo "error: neither claude nor gemini CLI found" >&2
+        return 1
+    fi
+}
 
 # Add user-level package manager binaries to PATH
 # These directories allow installing tools without sudo/Nix for quick iteration
