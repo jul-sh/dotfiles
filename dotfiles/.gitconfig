@@ -11,6 +11,8 @@
 	default = current
 [pull]
 	rebase = true
+[merge]
+	conflictstyle = zdiff3
 [diff]
     tool = default-difftool
 [difftool "default-difftool"]

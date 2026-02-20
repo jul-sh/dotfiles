@@ -38,23 +38,36 @@ update_existing_repo() {
     if ! git -C "$CHECKOUT_DIR" pull --ff-only origin "$ref"; then
         echo "################################################################################"
         echo "ERROR: Fast-forward pull failed in $CHECKOUT_DIR"
-        echo "This usually happens when local changes conflict with upstream."
+        echo "This usually happens when there are uncommitted local changes."
         echo "################################################################################"
         echo
-        git -C "$CHECKOUT_DIR" status
+        echo "Local changes:"
+        echo "----------------------------------------"
+        git -C "$CHECKOUT_DIR" diff
+        git -C "$CHECKOUT_DIR" diff --staged
+        echo "----------------------------------------"
         echo
         echo "How would you like to proceed?"
-        echo " [r] Reset to upstream (WARNING: deletes all local changes)"
+        echo " [r] Reset to upstream (discard local changes shown above)"
+        echo " [c] Commit local changes, then retry pull"
         echo " [m] Manual resolution (exit script)"
-        printf "Option [r/M]: "
+        printf "Option [r/c/M]: "
         read -r choice < /dev/tty || true
         case "$choice" in
             r|R)
                 echo "Resetting to origin/$ref..."
                 git -C "$CHECKOUT_DIR" reset --hard "origin/$ref"
                 ;;
+            c|C)
+                echo "Committing local changes..."
+                git -C "$CHECKOUT_DIR" add -A
+                git -C "$CHECKOUT_DIR" commit -m "local changes"
+                if ! git -C "$CHECKOUT_DIR" pull --rebase origin "$ref"; then
+                    die "Pull with rebase failed. Please resolve manually in $CHECKOUT_DIR"
+                fi
+                ;;
             *)
-                die "Aborting. Please resolve conflicts in $CHECKOUT_DIR and re-run."
+                die "Aborting. Please resolve in $CHECKOUT_DIR and re-run."
                 ;;
         esac
     fi
