@@ -13,10 +13,23 @@ if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
 fi
 
 # ai <task> - Quick AI helper (auto-accepts, exits when done)
+# ai -c     - Continue last conversation in interactive mode
 # Use noglob to allow unquoted special chars: ai kill the process on port 6666
 alias ai='noglob _ai'
 _ai() {
-    echo "thinking..."
+    if [ "$1" = "-c" ]; then
+        if command -v claude &>/dev/null; then
+            claude --dangerously-skip-permissions -c
+        elif command -v gemini &>/dev/null; then
+            gemini
+        else
+            echo "error: neither claude nor gemini CLI found" >&2
+            return 1
+        fi
+        return
+    fi
+
+    printf "\033[2m\033[36m⟳ working...\033[0m\n" >&2
     if command -v claude &>/dev/null; then
         claude -p --model haiku --dangerously-skip-permissions --max-turns 10 \
             --append-system-prompt "Be concise. Do the task, don't ask follow-up questions." "$*"
