@@ -16,8 +16,18 @@ fi
 # ai -c     - Continue last conversation in interactive mode
 # Use noglob to allow unquoted special chars: ai kill the process on port 6666
 alias ai='noglob _ai'
+_ai_spinner() {
+    local frames=("(=^·ω·^=)    " "(=^·ω·^=)  ✧ " "(=^·ω·^=) ✦✧ " "(=^·ω·^=)✦✧✦ ")
+    local i=0
+    while true; do
+        printf "\r\033[K\033[35m%s\033[0m" "${frames[$i]}" >&2
+        i=$(( (i + 1) % ${#frames[@]} ))
+        sleep 0.2
+    done
+}
 _ai() {
     if [ "$1" = "-c" ]; then
+        echo "Continuing last conversation..." >&2
         if command -v claude &>/dev/null; then
             claude --dangerously-skip-permissions -c
         elif command -v gemini &>/dev/null; then
@@ -29,7 +39,10 @@ _ai() {
         return
     fi
 
-    printf "\033[2m\033[36m⟳ working...\033[0m\n" >&2
+    _ai_spinner &
+    local spinner_pid=$!
+    trap "kill $spinner_pid 2>/dev/null" EXIT
+
     if command -v claude &>/dev/null; then
         claude -p --model haiku --dangerously-skip-permissions --max-turns 10 \
             --append-system-prompt "Be concise. Do the task, don't ask follow-up questions." "$*"
@@ -39,6 +52,10 @@ _ai() {
         echo "error: neither claude nor gemini CLI found" >&2
         return 1
     fi
+
+    kill $spinner_pid 2>/dev/null
+    printf "\r\033[K" >&2
+    trap - EXIT
 }
 
 # Add user-level package manager binaries to PATH
