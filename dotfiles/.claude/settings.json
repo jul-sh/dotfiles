@@ -3,6 +3,7 @@
     "commit": "",
     "pr": ""
   },
+  "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
   "model": "opus",
   "skipDangerousModePermissionPrompt": true,
   "statusLine": {
