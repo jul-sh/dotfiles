@@ -41,8 +41,8 @@ update_existing_repo() {
         echo "Local changes detected - stashing before pull"
         echo "################################################################################"
         echo
-        git -C "$CHECKOUT_DIR" diff --stat
-        git -C "$CHECKOUT_DIR" diff --staged --stat
+        git -C "$CHECKOUT_DIR" diff
+        git -C "$CHECKOUT_DIR" diff --staged
         echo
         git -C "$CHECKOUT_DIR" stash push -m "bootstrap-auto-stash"
     fi
