@@ -54,7 +54,15 @@ update_existing_repo() {
     # Reapply stashed changes if any
     if git -C "$CHECKOUT_DIR" stash list | grep -q "bootstrap-auto-stash"; then
         echo "Reapplying local changes..."
-        if ! git -C "$CHECKOUT_DIR" stash pop; then
+        if git -C "$CHECKOUT_DIR" stash pop; then
+            echo "################################################################################"
+            echo "WARNING: You have uncommitted local changes (restored from stash)"
+            echo "################################################################################"
+            echo
+            git -C "$CHECKOUT_DIR" diff
+            git -C "$CHECKOUT_DIR" diff --staged
+            echo
+        else
             echo "################################################################################"
             echo "ERROR: Could not reapply local changes - conflicts detected"
             echo "################################################################################"
