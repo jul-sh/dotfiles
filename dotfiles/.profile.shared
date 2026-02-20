@@ -17,28 +17,17 @@ fi
 # Use noglob to allow unquoted special chars: ai kill the process on port 6666
 alias ai='noglob _ai'
 _ai_spinner() {
-    local BR='\033[91m' BY='\033[93m' BG='\033[92m' BC='\033[96m' BB='\033[94m' BM='\033[95m'
-    local BOLD='\033[1m' DIM='\033[2m' RST='\033[0m'
-    local colors=("$BR" "$BY" "$BG" "$BC" "$BB" "$BM")
-    local faces=("(◕‿◕✿)" "(◕ᴗ◕✿)" "(◕ω◕✿)" "(◕◡◕✿)" "(◕‿◕❀)" "(◕ᴗ◕❀)")
-    local left=("✨ ･ﾟ✧" " ✧･ﾟ✨" "･ﾟ✨ ✧" "ﾟ✧ ✨･" "✧ ･ﾟ✨" " ✨･ﾟ✧")
-    local right=("✧ﾟ･ ✨" "✨ ✧ﾟ･" " ･✧ﾟ✨" "ﾟ✨ ･✧" "･ ✨✧ﾟ" "✧ ﾟ･✨")
-    local spin=("⣾" "⣽" "⣻" "⢿" "⡿" "⣟" "⣯" "⣷")
-    local f=0
+    local spin=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
+    local i=0
     printf '\033[?25l' >&2
     while true; do
-        printf '\r\033[K  %b%s%b %b%b%s%b %b%s%b %b%s%b' \
-            "${colors[$((f % 6))]}" "${left[$((f % 6))]}" "$RST" \
-            "${colors[$(((f + 2) % 6))]}" "$BOLD" "${faces[$((f % 6))]}" "$RST" \
-            "${colors[$(((f + 4) % 6))]}" "${right[$((f % 6))]}" "$RST" \
-            "$DIM" "${spin[$((f % 8))]}" "$RST" >&2
-        sleep 0.08
-        f=$((f + 1))
+        printf '\r\033[K\033[36m%s\033[0m \033[2mthinking...\033[0m' "${spin[$((i % 10))]}" >&2
+        sleep 0.1
+        i=$((i + 1))
     done
 }
 _ai() {
     if [ "$1" = "-c" ]; then
-        printf "\033[36m✨ Continuing last conversation...\033[0m\n" >&2
         if command -v claude &>/dev/null; then
             claude --dangerously-skip-permissions -c
         elif command -v gemini &>/dev/null; then
@@ -66,6 +55,7 @@ _ai() {
 
     kill $spinner_pid 2>/dev/null
     printf '\033[?25h\r\033[K' >&2
+    printf '\033[2m(ai -c to continue)\033[0m\n' >&2
     trap - EXIT
 }
 
