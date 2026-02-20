@@ -17,7 +17,7 @@ fi
 alias ai='noglob _ai'
 _ai() {
     if command -v claude &>/dev/null; then
-        claude -p --model haiku --dangerously-skip-permissions --max-turns 10 "$*"
+        ANTHROPIC_API_KEY= claude -p --model haiku --dangerously-skip-permissions --max-turns 10 "$*"
     elif command -v gemini &>/dev/null; then
         gemini --yolo -p "$*"
     else
