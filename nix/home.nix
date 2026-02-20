@@ -31,7 +31,6 @@ in
     uv
     inputs.fresh.packages.${pkgs.system}.default
     zellij
-    aichat
     git
     git-lfs
     gh
