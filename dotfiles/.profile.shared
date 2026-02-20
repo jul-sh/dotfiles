@@ -12,7 +12,7 @@ if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
   . "$HOME/.nix-profile/etc/profile.d/nix.sh"
 fi
 
-# ai <task> - Quick AI helper (auto-accepts, exits when done)
+# ai <task> - Quick AI helper (auto-accepts, prints, offers follow-up)
 # Use noglob to allow unquoted special chars: ai kill the process on port 6666
 alias ai='noglob _ai'
 _ai() {
@@ -20,6 +20,9 @@ _ai() {
     if command -v claude &>/dev/null; then
         claude -p --model haiku --dangerously-skip-permissions --max-turns 10 \
             --append-system-prompt "Be concise. Do the task, don't ask follow-up questions." "$*"
+        printf "\n[c]ontinue in claude? "
+        read -r choice
+        [[ "$choice" == "c" ]] && claude --model haiku --dangerously-skip-permissions -c
     elif command -v gemini &>/dev/null; then
         gemini --yolo -p "$*"
     else
