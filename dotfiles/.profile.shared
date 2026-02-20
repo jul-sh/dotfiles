@@ -15,7 +15,7 @@ fi
 # ai <task> - Quick Claude helper (auto-accepts, exits when done)
 # Use noglob to allow unquoted special chars: ai kill the process on port 6666
 alias ai='noglob _ai'
-_ai() { claude -p --model haiku --dangerously-skip-permissions "$*"; }
+_ai() { claude -p --model haiku --dangerously-skip-permissions --max-turns 10 "$*"; }
 
 # Add user-level package manager binaries to PATH
 # These directories allow installing tools without sudo/Nix for quick iteration
