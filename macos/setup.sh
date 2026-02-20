@@ -2,7 +2,7 @@
 # macos/setup.sh - macOS-only setup steps invoked by nix/setup-internal.sh
 
 set -euo pipefail
-
+# hi
 # Ensure we are in the repo root
 cd "$(dirname "$0")/.."
 
@@ -75,7 +75,14 @@ install_capslock_remap() {
     # Compile if source is newer or binary missing
     if [[ "$swift_src" -nt "$bin_dst" ]] || [[ ! -f "$bin_dst" ]]; then
         echo "Compiling capslock remap agent..."
-        swiftc -O "$swift_src" -o "$bin_dst"
+        if ! command -v swiftc &>/dev/null; then
+            echo "  warning: swiftc not found, skipping capslock remap"
+            return
+        fi
+        if ! swiftc -O "$swift_src" -o "$bin_dst"; then
+            echo "  warning: swiftc compilation failed, skipping capslock remap"
+            return
+        fi
     fi
 
     # Clean up old one-shot agent if present
@@ -126,7 +133,16 @@ install_capslock_remap_system() {
     tmp_bin=$(mktemp)
     if [[ "$swift_src" -nt "$bin_dst" ]] || [[ ! -f "$bin_dst" ]]; then
         echo "Compiling capslock remap daemon..."
-        swiftc -O "$swift_src" -o "$tmp_bin"
+        if ! command -v swiftc &>/dev/null; then
+            echo "  warning: swiftc not found, skipping capslock remap"
+            rm -f "$tmp_bin"
+            return
+        fi
+        if ! swiftc -O "$swift_src" -o "$tmp_bin"; then
+            echo "  warning: swiftc compilation failed, skipping capslock remap"
+            rm -f "$tmp_bin"
+            return
+        fi
         sudo cp "$tmp_bin" "$bin_dst"
         sudo chmod +x "$bin_dst"
         rm -f "$tmp_bin"
@@ -305,7 +321,10 @@ main() {
     if [[ "$SETUP_SCOPE" == "user" ]]; then
         echo "Skipping system configuration (SETUP_SCOPE=user)"
     else
-        echo "Configuring system defaults (requires sudo)..."
+        echo "################################################################################"
+        echo "System configuration requires sudo."
+        echo "To skip, re-run with: SETUP_SCOPE=user curl c.jul.sh | sh"
+        echo "################################################################################"
         if sudo -v; then
             configure_system_defaults
         else

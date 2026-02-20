@@ -43,7 +43,7 @@ EOF
 }
 
 apply_nix_config() {
-    echo "Applying Home Manager configuration..."
+    echo "Building Home Manager configuration (this may take a few minutes)..."
     ensure_local_host_flake
     local nix_config=$'experimental-features = nix-command flakes\nsubstituters = https://cache.nixos.org/\ntrusted-substituters = https://cache.nixos.org/\n'
     local config_name="${USER}@$(get_nix_system)"

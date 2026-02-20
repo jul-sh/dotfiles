@@ -25,6 +25,7 @@ in
 
   # --- 1. Packages ---
   home.packages = with pkgs; [
+    coreutils
     starship
     atuin
     uv

@@ -1,3 +1,8 @@
+# Shell sourcing order:
+#   .bash_profile / .zprofile → .profile.shared (this file) → sets PATH, sources Nix
+#   .bashrc                   → .bashrc.shared              → launches zsh
+#   .zshrc                    → .zshrc.shared               → actual shell config
+
 # Source Nix multi-user profile if it exists
 if [ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]; then
   . "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
@@ -34,8 +39,15 @@ if command -v python3 &> /dev/null; then
 fi
 
 
+# attach [name] - Attach to or create a zellij session
+#   No args: uses <dirname>_<hash> based on $PWD
+#   --list:  show existing sessions
 attach() {
-    # 1. Determine the target name
+    if [ "$1" = "--list" ] || [ "$1" = "-l" ]; then
+        zellij list-sessions 2>/dev/null || echo "No sessions"
+        return
+    fi
+
     if [ -n "$1" ]; then
         TARGET="$1"
     else
@@ -44,17 +56,13 @@ attach() {
         TARGET="${DIR_NAME}_${PATH_HASH}"
     fi
 
-    # Strip ANSI codes from session list for reliable matching
     SESSIONS=$(zellij list-sessions 2>/dev/null | perl -pe 's/\e\[\d*(;\d+)*m//g')
-
-    # 2. Check for a FUZZY match (e.g., "clipkitty" matches "clipkitty_1234")
     FUZZY_MATCH=$(echo "$SESSIONS" | grep "^${TARGET}_" | head -n 1 | awk '{print $1}')
 
     if [ -n "$FUZZY_MATCH" ]; then
-        echo "Found existing session: $FUZZY_MATCH"
+        echo "Attaching to: $FUZZY_MATCH"
         zellij attach "$FUZZY_MATCH"
     else
-        # 3. Attach to existing session or create new
         zellij attach -c "$TARGET"
     fi
 }
