@@ -12,16 +12,19 @@ if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
   . "$HOME/.nix-profile/etc/profile.d/nix.sh"
 fi
 
-# ai <task> - Quick AI helper (auto-accepts, exits when done)
+# ai <task> - Quick AI helper with shell context
 # Use noglob to allow unquoted special chars: ai kill the process on port 6666
 alias ai='noglob _ai'
 _ai() {
-    echo "thinking..."
+    local hist=$(fc -ln -20 2>/dev/null | head -20)
+    local ctx="Recent shell commands for context:
+$hist
+
+Task: $*"
     if command -v claude &>/dev/null; then
-        claude -p --model haiku --dangerously-skip-permissions --max-turns 10 \
-            --append-system-prompt "Be concise. Do the task, don't ask follow-up questions." "$*"
+        claude --model haiku --dangerously-skip-permissions "$ctx"
     elif command -v gemini &>/dev/null; then
-        gemini --yolo -p "$*"
+        gemini --yolo "$ctx"
     else
         echo "error: neither claude nor gemini CLI found" >&2
         return 1
