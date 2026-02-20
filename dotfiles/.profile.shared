@@ -20,14 +20,14 @@ _ai_spinner() {
     local spin=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
     local colors=("\033[38;5;209m" "\033[38;5;208m" "\033[38;5;203m" "\033[38;5;204m" "\033[38;5;198m" "\033[38;5;199m" "\033[38;5;164m" "\033[38;5;135m" "\033[38;5;141m" "\033[38;5;147m" "\033[38;5;153m" "\033[38;5;159m")
     local txt="thinking..."
-    local len=${#txt}
-    local nc=${#colors[@]}
     local i=0
     printf '\033[?25l' >&2
     while true; do
         local out="\r\033[K\033[36m${spin[$((i % 10))]}\033[0m "
-        for ((j=0; j<len; j++)); do
-            out+="${colors[$(((i + j) % nc))]}${txt:j:1}"
+        local j=0
+        while [ $j -lt ${#txt} ]; do
+            out+="${colors[$(((i + j) % 12))]}${txt:$j:1}"
+            j=$((j + 1))
         done
         out+="\033[0m"
         printf "$out" >&2
