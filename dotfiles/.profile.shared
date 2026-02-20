@@ -48,23 +48,34 @@ _ai() {
         return
     fi
 
+    if [ -z "$*" ]; then
+        echo "usage: ai <task>" >&2
+        echo "       ai -c  (continue last conversation)" >&2
+        return 1
+    fi
+
     _ai_spinner &!
     local spinner_pid=$!
     trap "kill $spinner_pid 2>/dev/null; wait $spinner_pid 2>/dev/null; printf '\033[?25h\r\033[K' >&2" EXIT
 
+    local result
     if command -v claude &>/dev/null; then
-        claude -p --model haiku --dangerously-skip-permissions --max-turns 10 \
-            --append-system-prompt "Be concise. Do the task, don't ask follow-up questions." "$*"
+        result=$(claude -p --model haiku --dangerously-skip-permissions --max-turns 10 \
+            --append-system-prompt "Be concise. Do the task, don't ask follow-up questions." "$*" 2>&1)
     elif command -v gemini &>/dev/null; then
-        gemini --yolo -p "$*"
+        result=$(gemini --yolo -p "$*" 2>&1)
     else
+        kill $spinner_pid 2>/dev/null; wait $spinner_pid 2>/dev/null
+        printf '\033[?25h\r\033[K' >&2
         echo "error: neither claude nor gemini CLI found" >&2
+        trap - EXIT
         return 1
     fi
 
     kill $spinner_pid 2>/dev/null
     wait $spinner_pid 2>/dev/null
     printf '\033[?25h\r\033[K' >&2
+    echo "$result"
     printf '\033[2m(ai -c to continue)\033[0m\n' >&2
     trap - EXIT
 }
