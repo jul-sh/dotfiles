@@ -48,9 +48,9 @@ _ai() {
         return
     fi
 
-    _ai_spinner &
+    _ai_spinner &!
     local spinner_pid=$!
-    trap "kill $spinner_pid 2>/dev/null; printf '\033[?25h\r\033[K' >&2" EXIT
+    trap "kill $spinner_pid 2>/dev/null; wait $spinner_pid 2>/dev/null; printf '\033[?25h\r\033[K' >&2" EXIT
 
     if command -v claude &>/dev/null; then
         claude -p --model haiku --dangerously-skip-permissions --max-turns 10 \
@@ -63,6 +63,7 @@ _ai() {
     fi
 
     kill $spinner_pid 2>/dev/null
+    wait $spinner_pid 2>/dev/null
     printf '\033[?25h\r\033[K' >&2
     printf '\033[2m(ai -c to continue)\033[0m\n' >&2
     trap - EXIT
