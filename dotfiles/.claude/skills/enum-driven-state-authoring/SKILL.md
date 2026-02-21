@@ -88,6 +88,39 @@ sealed interface ConnectionState {
 
 ### Anti-Patterns to Avoid
 
+❌ **Don't add convenience computed properties that turn enums back into booleans/optionals:**
+```swift
+enum State {
+    case idle
+    case loading
+    case success(Data)
+    case error(Error)
+
+    // ❌ BAD: Defeats the purpose of the sum type
+    var isLoading: Bool {
+        if case .loading = self { return true }
+        return false
+    }
+
+    var data: Data? {
+        if case .success(let d) = self { return d }
+        return nil
+    }
+}
+
+// ✅ GOOD: Use pattern matching directly at call sites
+switch state {
+case .loading: showSpinner()
+case .success(let data): display(data)
+case .error(let e): showError(e)
+case .idle: break
+}
+```
+
+These "convenience" properties re-introduce the boolean/optional problems you're trying to avoid. They allow callers to bypass exhaustive matching and lead back to `isX && hasY` combinations. Always use direct pattern matching at call sites instead.
+
+---
+
 ❌ **Don't start with this:**
 ```typescript
 interface User {

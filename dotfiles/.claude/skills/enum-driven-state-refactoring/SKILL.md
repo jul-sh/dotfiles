@@ -30,6 +30,47 @@ description: Refactor loose state models (optional fields, parallel booleans) in
 
 ---
 
+### Anti-Patterns to Avoid
+
+**Anti-pattern: Convenience Computed Properties**
+```swift
+// 🚩 DON'T add computed properties that turn enums back into booleans/optionals
+enum State {
+    case idle
+    case loading
+    case success(Data)
+    case error(Error)
+
+    // ❌ BAD: Defeats the purpose of the sum type
+    var isLoading: Bool {
+        if case .loading = self { return true }
+        return false
+    }
+
+    var data: Data? {
+        if case .success(let d) = self { return d }
+        return nil
+    }
+}
+
+// ✅ GOOD: Use pattern matching directly at call sites
+switch state {
+case .loading: showSpinner()
+case .success(let data): display(data)
+case .error(let e): showError(e)
+case .idle: break
+}
+```
+
+These "convenience" properties re-introduce the boolean/optional problems you're trying to eliminate. They:
+- Allow callers to bypass exhaustive matching
+- Hide the actual state structure
+- Lead to `isX && hasY` boolean combinations again
+
+Always use direct pattern matching at call sites instead.
+
+---
+
 ### Detection Heuristics
 
 **Smell: Conditional Optionality**
