@@ -121,6 +121,60 @@ These "convenience" properties re-introduce the boolean/optional problems you're
 
 ---
 
+❌ **Don't add boolean/config properties that derive from enum cases:**
+```swift
+enum LaunchMode {
+    case production
+    case testing
+
+    // ❌ BAD: Just indirection - inline pattern matching at call site instead
+    var shouldStartMonitoring: Bool {
+        switch self {
+        case .production: return true
+        case .testing: return false
+        }
+    }
+}
+
+// ❌ BAD: Using the boolean property
+if launchMode.shouldStartMonitoring {
+    store.startMonitoring()
+}
+
+// ✅ GOOD: Inline pattern matching at call site
+if case .production = launchMode {
+    store.startMonitoring()
+}
+```
+
+These derived boolean properties are just indirection. Inline `if case` or `switch` at call sites instead—it's clearer and shows exactly which mode triggers each behavior.
+
+---
+
+✅ **Data extraction properties are acceptable:**
+```swift
+enum FetchedMetadata {
+    case titleOnly(title: String, description: String?)
+    case titleAndImage(title: String, imageData: Data, description: String?)
+
+    // ✅ OK: Extracts actual data from associated values
+    var title: String? {
+        switch self {
+        case .titleOnly(let title, _), .titleAndImage(let title, _, _): return title
+        }
+    }
+
+    // ✅ OK: Computed display text for UI
+    var displayMessage: String { ... }
+}
+```
+
+The distinction:
+- **Anti-pattern**: `var isX: Bool` that just checks case membership
+- **Acceptable**: Properties that extract associated values or compute display text
+
+---
+
 ❌ **Don't start with this:**
 ```typescript
 interface User {

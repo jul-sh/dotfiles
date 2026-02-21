@@ -69,6 +69,93 @@ These "convenience" properties re-introduce the boolean/optional problems you're
 
 Always use direct pattern matching at call sites instead.
 
+**Anti-pattern: Boolean/Config Properties on Enums**
+```swift
+// 🚩 DON'T add properties that derive booleans from enum cases
+enum LaunchMode {
+    case production
+    case testing
+
+    // ❌ BAD: Just indirection - inline pattern matching at call site instead
+    var shouldStartMonitoring: Bool {
+        switch self {
+        case .production: return true
+        case .testing: return false
+        }
+    }
+
+    var shouldShowOnLaunch: Bool {
+        switch self {
+        case .production: return false
+        case .testing: return true
+        }
+    }
+}
+
+// ❌ BAD: Using the boolean properties
+if launchMode.shouldStartMonitoring {
+    store.startMonitoring()
+}
+
+// ✅ GOOD: Inline pattern matching at call site
+if case .production = launchMode {
+    store.startMonitoring()
+}
+
+// ✅ GOOD: Or use switch when multiple cases need handling
+switch launchMode {
+case .production:
+    store.startMonitoring()
+case .testing:
+    break
+}
+```
+
+These derived boolean properties are just indirection. They:
+- Add unnecessary code to the enum definition
+- Hide the actual enum case being checked
+- Make it harder to see what each mode actually does
+
+Inline `if case` or `switch` at call sites instead.
+
+**Acceptable: Data Extraction Properties**
+```swift
+// ✅ OK: Properties that extract/transform actual data from associated values
+enum FetchedMetadata {
+    case titleOnly(title: String, description: String?)
+    case imageOnly(imageData: Data, description: String?)
+    case titleAndImage(title: String, imageData: Data, description: String?)
+
+    // ✅ OK: These extract actual data, not just check case membership
+    var title: String? {
+        switch self {
+        case .titleOnly(let title, _), .titleAndImage(let title, _, _): return title
+        case .imageOnly: return nil
+        }
+    }
+
+    var description: String? {
+        switch self {
+        case .titleOnly(_, let desc), .imageOnly(_, let desc), .titleAndImage(_, _, let desc):
+            return desc
+        }
+    }
+
+    // ✅ OK: Computed display text for UI
+    var displayMessage: String {
+        switch self {
+        case .titleOnly(let title, _): return "Title: \(title)"
+        case .imageOnly: return "Image only"
+        case .titleAndImage(let title, _, _): return "Image: \(title)"
+        }
+    }
+}
+```
+
+The distinction is:
+- **Anti-pattern**: `var isX: Bool` or `var shouldX: Bool` that just check case membership
+- **Acceptable**: Properties that extract associated values or compute display text for UI
+
 ---
 
 ### Detection Heuristics
