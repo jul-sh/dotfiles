@@ -197,9 +197,17 @@ attach() {
     fi
 }
 
-# Initialize Git LFS (only sets up hooks once, idempotent)
+# Initialize Git LFS with absolute paths in hooks (fixes Homebrew subprocess issues)
 if command -v git-lfs &> /dev/null; then
   git lfs install --skip-smudge >/dev/null 2>&1
+  # Patch hooks to use absolute path since subprocesses (e.g., Homebrew) may not have nix in PATH
+  GIT_LFS_PATH="$(command -v git-lfs)"
+  HOOKS_DIR="$(git config --global core.hooksPath 2>/dev/null)"
+  if [ -n "$HOOKS_DIR" ] && [ -d "$HOOKS_DIR" ]; then
+    for hook in "$HOOKS_DIR"/{post-checkout,post-commit,post-merge,pre-push}; do
+      [ -f "$hook" ] && sed -i '' "s|command -v git-lfs|command -v $GIT_LFS_PATH|g; s|git lfs |$GIT_LFS_PATH |g" "$hook" 2>/dev/null
+    done
+  fi
 fi
 
 # Source utils if they exist
