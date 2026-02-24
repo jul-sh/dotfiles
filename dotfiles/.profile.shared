@@ -197,6 +197,11 @@ attach() {
     fi
 }
 
+# Initialize Git LFS (only sets up hooks once, idempotent)
+if command -v git-lfs &> /dev/null; then
+  git lfs install --skip-smudge >/dev/null 2>&1
+fi
+
 # Source utils if they exist
 if [ -f "$HOME/.utils.sh" ]; then
   source "$HOME/.utils.sh"
