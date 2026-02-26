@@ -23,9 +23,25 @@ resolve_setup_scope() {
     echo "Setup scope: $SETUP_SCOPE"
 }
 
+ensure_homebrew() {
+    if command -v brew &>/dev/null; then
+        return
+    fi
+    echo "Installing Homebrew..."
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    # Add brew to PATH for the rest of this session
+    if [[ -x /opt/homebrew/bin/brew ]]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ -x /usr/local/bin/brew ]]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+    else
+        die "Homebrew installed but brew not found in expected locations"
+    fi
+}
+
 install_desktop_apps() {
     echo "Installing desktop apps..."
-    echo "Ensuring desktop apps are managed by Homebrew..."
+    ensure_homebrew
     local casks=("wezterm" "zed" "jul-sh/clipkitty/clipkitty")
     for cask in "${casks[@]}"; do
         local base_name="${cask##*/}"
