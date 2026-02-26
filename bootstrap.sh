@@ -118,6 +118,12 @@ main() {
 
     if ! command -v nix >/dev/null 2>&1; then
         bash ./nix/install.sh
+        # install.sh runs in a subshell, so source the profile here
+        for _p in "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" \
+                  "$HOME/.nix-profile/etc/profile.d/nix.sh"; do
+            if [ -f "$_p" ]; then . "$_p"; break; fi
+        done
+        command -v nix >/dev/null 2>&1 || die "nix not found after install; restart your shell and re-run"
     fi
 
     ensure_nix_conf
