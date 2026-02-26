@@ -35,37 +35,9 @@ install_nix() {
 
     echo "Installing Nix..."
 
-    # Create temp file for extra config (process substitution not portable)
-    local extra_conf
-    extra_conf=$(mktemp)
-    echo "experimental-features = nix-command flakes" > "$extra_conf"
-    trap "rm -f '$extra_conf'" EXIT
-
-    if [ "${SETUP_SCOPE:-}" = "user" ]; then
-        # Single-user mode only (no sudo)
-        if ! curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --no-daemon --yes --nix-extra-conf-file "$extra_conf"; then
-            die "Nix installation failed"
-        fi
-    else
-        # Try official installer with multi-user mode first
-        if curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --daemon --yes --nix-extra-conf-file "$extra_conf"; then
-            : # success
-        else
-            echo ""
-            echo "Multi-user installation failed (requires sudo)."
-            printf "Continue with single-user installation? [y/N]: "
-            read -r choice < /dev/tty || choice=""
-            case "$choice" in
-                y|Y)
-                    if ! curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --no-daemon --yes --nix-extra-conf-file "$extra_conf"; then
-                        die "Nix installation failed"
-                    fi
-                    ;;
-                *)
-                    die "Installation aborted"
-                    ;;
-            esac
-        fi
+    if ! curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | \
+        sh -s -- install --no-confirm; then
+        die "Nix installation failed"
     fi
 
     source_nix_profile
