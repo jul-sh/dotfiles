@@ -10,7 +10,7 @@ keybinds clear-defaults=true {
     }
 
     // --- TAB MANAGEMENT (Global Alt Binds) ---
-    shared_except "locked" {
+    shared_except "locked" "tab" {
         bind "Alt t" { NewTab; SwitchToMode "Normal"; }
         bind "Alt w" { CloseTab; SwitchToMode "Normal"; }
         bind "Alt r" { SwitchToMode "RenameTab"; TabNameInput 0; }
