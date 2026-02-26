@@ -7,41 +7,9 @@
 _nix_recover() {
   [ "$(uname)" = "Darwin" ] || return 0
   [ -d "/nix" ] && return 0
-  diskutil list 2>/dev/null | grep -q "Nix Store" || return 0
 
-  printf '\033[36m→ Recovering Nix after macOS update...\033[0m\n'
-
-  # Restore synthetic.conf
-  if [ ! -f /etc/synthetic.conf ] || ! grep -q "^nix$" /etc/synthetic.conf 2>/dev/null; then
-    echo "nix" | sudo tee -a /etc/synthetic.conf > /dev/null 2>&1 || {
-      printf '\033[31m✗ Failed to update synthetic.conf (need sudo)\033[0m\n'
-      printf '  Run: \033[1m~/git/dotfiles/macos/fix-nix.sh\033[0m\n\n'
-      return 1
-    }
-  fi
-
-  # Create mount point without reboot
-  sudo /System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util -t 2>/dev/null
-
-  # Mount the volume
-  if [ -d "/nix" ] || [ -L "/nix" ]; then
-    sudo diskutil mount "Nix Store" >/dev/null 2>&1
-    if [ -d "/nix/store" ]; then
-      printf '\033[32m✓ Nix recovered\033[0m\n\n'
-      return 0
-    fi
-  fi
-
-  # Reboot required
-  printf '\033[33m⚠ Reboot required to restore /nix\033[0m\n'
-  printf '  synthetic.conf is fixed, but /nix needs a reboot to appear.\n'
-  printf '\033[1mReboot now? [Y/n]:\033[0m '
-  read -r choice < /dev/tty 2>/dev/null || choice="y"
-  case "$choice" in
-    n|N) printf '  Run \033[1msudo reboot\033[0m when ready.\n\n' ;;
-    *) sudo reboot ;;
-  esac
-  return 1
+  printf '\033[36m→ Nix missing — re-running installer to recover...\033[0m\n'
+  curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 }
 _nix_recover
 
