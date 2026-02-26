@@ -65,6 +65,11 @@ keybinds clear-defaults=true {
         bind "Esc" { UndoRenameTab; SwitchToMode "Tab"; }
     }
 
+    // --- LOCKED MODE ---
+    locked {
+        bind "Ctrl g" { SwitchToMode "Normal"; }
+    }
+
     // --- SESSION MODE ---
     session {
         bind "Ctrl o" { SwitchToMode "Normal"; }
