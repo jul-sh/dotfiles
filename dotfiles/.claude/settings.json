@@ -9,5 +9,10 @@
   "statusLine": {
     "command": "/Users/julsh/.claude/statusline-kawaii.sh",
     "type": "command"
+  },
+  "permissions": {
+    "allow": [
+      "Read(~/Downloads/**)"
+    ]
   }
 }
