@@ -222,34 +222,31 @@ if command -v git-lfs &> /dev/null; then
   fi
 fi
 
-# gh wrapper: strip Claude Code suffix from "gh pr create" bodies
+# gh wrapper: strip Claude Code attribution from any --body argument
 gh() {
-  # Only intercept "gh pr create"
-  if [ "$1" != "pr" ] || [ "$2" != "create" ]; then
-    command gh "$@"
-    return
-  fi
-
   local args=() body_next=0
-  local suffix=$'\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)'
 
   for arg in "$@"; do
     if [ "$body_next" = 1 ]; then
-      arg="${arg%"$suffix"}"
+      arg="$(_gh_strip_claude "$arg")"
       body_next=0
     elif [ "$arg" = "--body" ] || [ "$arg" = "-b" ]; then
       body_next=1
     elif [[ "$arg" == --body=* ]]; then
-      local body="${arg#--body=}"
-      arg="--body=${body%"$suffix"}"
+      arg="--body=$(_gh_strip_claude "${arg#--body=}")"
     elif [[ "$arg" == -b=* ]]; then
-      local body="${arg#-b=}"
-      arg="-b=${body%"$suffix"}"
+      arg="-b=$(_gh_strip_claude "${arg#-b=}")"
     fi
     args+=("$arg")
   done
 
   command gh "${args[@]}"
+}
+
+_gh_strip_claude() {
+  printf '%s' "$1" | sed -E \
+    -e 's/[[:space:]]*🤖[[:space:]]*Generated with \[Claude Code\]\([^)]*\)[[:space:]]*//g' \
+    -e '/^Co-Authored-By: Claude .* <noreply@anthropic\.com>$/d'
 }
 
 # Source utils if they exist

@@ -1,9 +1,16 @@
 {
+  "model": "opus",
+  "statusLine": {
+    "type": "command",
+    "command": "/Users/julsh/.claude/statusline-kawaii.sh"
+  },
+  "alwaysThinkingEnabled": false,
   "attribution": {
     "commit": "",
     "pr": ""
   },
   "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+<<<<<<< Updated upstream
   "model": "opus",
   "skipDangerousModePermissionPrompt": true,
   "statusLine": {
@@ -15,4 +22,14 @@
       "Read(~/Downloads/**)"
     ]
   }
+||||||| Stash base
+  "model": "opus",
+  "skipDangerousModePermissionPrompt": true,
+  "statusLine": {
+    "command": "/Users/julsh/.claude/statusline-kawaii.sh",
+    "type": "command"
+  }
+=======
+  "skipDangerousModePermissionPrompt": true
+>>>>>>> Stashed changes
 }
