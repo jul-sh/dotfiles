@@ -12,5 +12,6 @@ dotfiles/.claude/*
 
 dotfiles/.codex/*
 !dotfiles/.codex/AGENTS.md
+!dotfiles/.codex/config.toml
 
 .setup_scope
