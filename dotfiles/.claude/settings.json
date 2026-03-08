@@ -10,26 +10,10 @@
     "pr": ""
   },
   "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-<<<<<<< Updated upstream
-  "model": "opus",
   "skipDangerousModePermissionPrompt": true,
-  "statusLine": {
-    "command": "/Users/julsh/.claude/statusline-kawaii.sh",
-    "type": "command"
-  },
   "permissions": {
     "allow": [
       "Read(~/Downloads/**)"
     ]
   }
-||||||| Stash base
-  "model": "opus",
-  "skipDangerousModePermissionPrompt": true,
-  "statusLine": {
-    "command": "/Users/julsh/.claude/statusline-kawaii.sh",
-    "type": "command"
-  }
-=======
-  "skipDangerousModePermissionPrompt": true
->>>>>>> Stashed changes
 }
