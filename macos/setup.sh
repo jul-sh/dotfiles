@@ -42,7 +42,7 @@ ensure_homebrew() {
 install_desktop_apps() {
     echo "Installing desktop apps..."
     ensure_homebrew
-    local casks=("wezterm" "zed" "jul-sh/clipkitty/clipkitty")
+    local casks=("wezterm" "zed" "jul-sh/clipkitty/clipkitty" "home-assistant")
     for cask in "${casks[@]}"; do
         local base_name="${cask##*/}"
         # Check if installed
