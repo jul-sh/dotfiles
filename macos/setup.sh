@@ -155,6 +155,25 @@ install_screensaver() {
     defaults -currentHost write com.apple.screensaver moduleDict -dict moduleName -string "Snoopy" path -string "$saver_path" type -int 0
 }
 
+configure_spotlight() {
+    echo "Configuring Spotlight..."
+
+    # Disable these sources in Spotlight results
+    defaults write com.apple.Spotlight EnabledPreferenceRules -array \
+        "com.apple.iBooksX" \
+        "com.google.drivefs" \
+        "com.apple.mail" \
+        "com.apple.reminders" \
+        "com.apple.Safari" \
+        "com.apple.tips" \
+        "System.files" \
+        "System.folders"
+
+    # Enable clipboard history in Spotlight (7 days)
+    defaults write com.apple.Spotlight PasteboardHistoryEnabled -bool true
+    defaults write com.apple.Spotlight PasteboardHistoryTimeout -int 604800
+}
+
 build_spotlight_scripts() {
     local script="./macos/raycast_scripts/build_spotlight_apps.sh"
     if [[ -f "$script" ]]; then
@@ -429,6 +448,7 @@ main() {
     install_desktop_apps
     configure_default_apps
     install_screensaver
+    configure_spotlight
     build_spotlight_scripts
     echo "Configuring user defaults..."
     configure_user_defaults
