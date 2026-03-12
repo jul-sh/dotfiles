@@ -402,10 +402,41 @@ configure_user_defaults() {
     killall Dock 2>/dev/null || true
 }
 
+configure_touch_id_sudo() {
+    local sudo_pam="/etc/pam.d/sudo_local"
+    local tid_line="auth       sufficient     pam_tid.so"
+
+    # macOS uses sudo_local for local customizations (survives OS updates)
+    if [[ -f "$sudo_pam" ]] && grep -q "pam_tid.so" "$sudo_pam"; then
+        echo "Touch ID for sudo already configured."
+        return
+    fi
+
+    echo "Enabling Touch ID for sudo..."
+    # Create sudo_local with Touch ID if it doesn't exist
+    if [[ ! -f "$sudo_pam" ]]; then
+        sudo tee "$sudo_pam" > /dev/null <<EOF
+# sudo_local: local config file which survives system updates
+$tid_line
+EOF
+    else
+        # Prepend to existing file (must be before other auth lines)
+        local tmp_file
+        tmp_file=$(mktemp)
+        echo "$tid_line" | cat - "$sudo_pam" > "$tmp_file"
+        sudo mv "$tmp_file" "$sudo_pam"
+    fi
+    sudo chmod 444 "$sudo_pam"
+    sudo chown root:wheel "$sudo_pam"
+}
+
 configure_system_defaults() {
     local capslock_agent="$HOME/Library/LaunchAgents/com.capslock_to_backspace.plist"
     local capslock_remap_agent="$HOME/Library/LaunchAgents/com.julsh.capslock_remap.plist"
     local sleep_agent="$HOME/Library/LaunchAgents/com.julsh.sleeponlidclose.plist"
+
+    # Enable Touch ID for sudo authentication
+    configure_touch_id_sudo
 
     if [[ "$SETUP_SCOPE" == "system" ]]; then
         # Install capslock remap as LaunchDaemon (all users, oneshot)
