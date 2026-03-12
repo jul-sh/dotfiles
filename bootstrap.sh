@@ -41,8 +41,11 @@ update_existing_repo() {
         echo "Local changes detected - stashing before pull"
         echo "################################################################################"
         echo
-        git -C "$CHECKOUT_DIR" diff
-        git -C "$CHECKOUT_DIR" diff --staged
+        echo "  - (red)   = committed version"
+        echo "  + (green) = your local changes"
+        echo
+        git --no-pager -C "$CHECKOUT_DIR" diff
+        git --no-pager -C "$CHECKOUT_DIR" diff --staged
         echo
         git -C "$CHECKOUT_DIR" stash push -m "bootstrap-auto-stash"
     fi
@@ -59,8 +62,11 @@ update_existing_repo() {
             echo "WARNING: You have uncommitted local changes (restored from stash)"
             echo "################################################################################"
             echo
-            git -C "$CHECKOUT_DIR" diff
-            git -C "$CHECKOUT_DIR" diff --staged
+            echo "  - (red)   = committed version"
+            echo "  + (green) = your local changes"
+            echo
+            git --no-pager -C "$CHECKOUT_DIR" diff
+            git --no-pager -C "$CHECKOUT_DIR" diff --staged
             echo
         else
             echo "################################################################################"
