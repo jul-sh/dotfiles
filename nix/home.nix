@@ -27,7 +27,7 @@ in
   home.packages = with pkgs; [
     coreutils
     starship
-    atuin
+    inputs.nixpkgs-atuin.legacyPackages.${pkgs.system}.atuin
     uv
     inputs.fresh.packages.${pkgs.system}.default
     zellij

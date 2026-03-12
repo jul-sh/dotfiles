@@ -1,6 +1,7 @@
-# Enum-Driven State Skills
-
-## Refactoring Existing Code
+---
+name: enum-driven-state-refactoring
+description: Refactor loose state models (optional fields, parallel booleans) into strict sum types. Apply when a field's validity depends on another field's value.
+---
 
 ## **Enum-Driven State**
 > A behavior-preserving refactor that makes unintended states structurally impossible using Sum Types (Enums, Discriminated Unions, Sealed Classes).
@@ -26,6 +27,134 @@
 | `status` + nullable siblings | Discriminated union with co-located data |
 | Field validity depends on another field | Move data inside the relevant case |
 | `get isX() { return type === 'x' }` | You already have a discriminator—formalize it |
+
+---
+
+### Anti-Patterns to Avoid
+
+**Anti-pattern: Convenience Computed Properties**
+```swift
+// 🚩 DON'T add computed properties that turn enums back into booleans/optionals
+enum State {
+    case idle
+    case loading
+    case success(Data)
+    case error(Error)
+
+    // ❌ BAD: Defeats the purpose of the sum type
+    var isLoading: Bool {
+        if case .loading = self { return true }
+        return false
+    }
+
+    var data: Data? {
+        if case .success(let d) = self { return d }
+        return nil
+    }
+}
+
+// ✅ GOOD: Use pattern matching directly at call sites
+switch state {
+case .loading: showSpinner()
+case .success(let data): display(data)
+case .error(let e): showError(e)
+case .idle: break
+}
+```
+
+These "convenience" properties re-introduce the boolean/optional problems you're trying to eliminate. They:
+- Allow callers to bypass exhaustive matching
+- Hide the actual state structure
+- Lead to `isX && hasY` boolean combinations again
+
+Always use direct pattern matching at call sites instead.
+
+**Anti-pattern: Boolean/Config Properties on Enums**
+```swift
+// 🚩 DON'T add properties that derive booleans from enum cases
+enum LaunchMode {
+    case production
+    case testing
+
+    // ❌ BAD: Just indirection - inline pattern matching at call site instead
+    var shouldStartMonitoring: Bool {
+        switch self {
+        case .production: return true
+        case .testing: return false
+        }
+    }
+
+    var shouldShowOnLaunch: Bool {
+        switch self {
+        case .production: return false
+        case .testing: return true
+        }
+    }
+}
+
+// ❌ BAD: Using the boolean properties
+if launchMode.shouldStartMonitoring {
+    store.startMonitoring()
+}
+
+// ✅ GOOD: Inline pattern matching at call site
+if case .production = launchMode {
+    store.startMonitoring()
+}
+
+// ✅ GOOD: Or use switch when multiple cases need handling
+switch launchMode {
+case .production:
+    store.startMonitoring()
+case .testing:
+    break
+}
+```
+
+These derived boolean properties are just indirection. They:
+- Add unnecessary code to the enum definition
+- Hide the actual enum case being checked
+- Make it harder to see what each mode actually does
+
+Inline `if case` or `switch` at call sites instead.
+
+**Acceptable: Data Extraction Properties**
+```swift
+// ✅ OK: Properties that extract/transform actual data from associated values
+enum FetchedMetadata {
+    case titleOnly(title: String, description: String?)
+    case imageOnly(imageData: Data, description: String?)
+    case titleAndImage(title: String, imageData: Data, description: String?)
+
+    // ✅ OK: These extract actual data, not just check case membership
+    var title: String? {
+        switch self {
+        case .titleOnly(let title, _), .titleAndImage(let title, _, _): return title
+        case .imageOnly: return nil
+        }
+    }
+
+    var description: String? {
+        switch self {
+        case .titleOnly(_, let desc), .imageOnly(_, let desc), .titleAndImage(_, _, let desc):
+            return desc
+        }
+    }
+
+    // ✅ OK: Computed display text for UI
+    var displayMessage: String {
+        switch self {
+        case .titleOnly(let title, _): return "Title: \(title)"
+        case .imageOnly: return "Image only"
+        case .titleAndImage(let title, _, _): return "Image: \(title)"
+        }
+    }
+}
+```
+
+The distinction is:
+- **Anti-pattern**: `var isX: Bool` or `var shouldX: Bool` that just check case membership
+- **Acceptable**: Properties that extract associated values or compute display text for UI
 
 ---
 
@@ -202,9 +331,15 @@ Product: status × data? × error? = 3 × 2 × 2 = 12 states (8 invalid)
 Sum:     Idle + Loading + Success(T) + Error(E) = 4 states (0 invalid)
 ```
 
----
 
-## Authoring New Code
+
+-------
+
+
+---
+name: enum-driven-state-authoring
+description: When writing new code, model state as sum types from the start. Apply when creating entities with distinct modes, phases, or lifecycle states.
+---
 
 ## **Enum-Driven State: Authoring Guide**
 > When writing new code, model state as sum types from the start. Don't create optional fields that depend on other fields.
@@ -290,6 +425,93 @@ sealed interface ConnectionState {
 ---
 
 ### Anti-Patterns to Avoid
+
+❌ **Don't add convenience computed properties that turn enums back into booleans/optionals:**
+```swift
+enum State {
+    case idle
+    case loading
+    case success(Data)
+    case error(Error)
+
+    // ❌ BAD: Defeats the purpose of the sum type
+    var isLoading: Bool {
+        if case .loading = self { return true }
+        return false
+    }
+
+    var data: Data? {
+        if case .success(let d) = self { return d }
+        return nil
+    }
+}
+
+// ✅ GOOD: Use pattern matching directly at call sites
+switch state {
+case .loading: showSpinner()
+case .success(let data): display(data)
+case .error(let e): showError(e)
+case .idle: break
+}
+```
+
+These "convenience" properties re-introduce the boolean/optional problems you're trying to avoid. They allow callers to bypass exhaustive matching and lead back to `isX && hasY` combinations. Always use direct pattern matching at call sites instead.
+
+---
+
+❌ **Don't add boolean/config properties that derive from enum cases:**
+```swift
+enum LaunchMode {
+    case production
+    case testing
+
+    // ❌ BAD: Just indirection - inline pattern matching at call site instead
+    var shouldStartMonitoring: Bool {
+        switch self {
+        case .production: return true
+        case .testing: return false
+        }
+    }
+}
+
+// ❌ BAD: Using the boolean property
+if launchMode.shouldStartMonitoring {
+    store.startMonitoring()
+}
+
+// ✅ GOOD: Inline pattern matching at call site
+if case .production = launchMode {
+    store.startMonitoring()
+}
+```
+
+These derived boolean properties are just indirection. Inline `if case` or `switch` at call sites instead—it's clearer and shows exactly which mode triggers each behavior.
+
+---
+
+✅ **Data extraction properties are acceptable:**
+```swift
+enum FetchedMetadata {
+    case titleOnly(title: String, description: String?)
+    case titleAndImage(title: String, imageData: Data, description: String?)
+
+    // ✅ OK: Extracts actual data from associated values
+    var title: String? {
+        switch self {
+        case .titleOnly(let title, _), .titleAndImage(let title, _, _): return title
+        }
+    }
+
+    // ✅ OK: Computed display text for UI
+    var displayMessage: String { ... }
+}
+```
+
+The distinction:
+- **Anti-pattern**: `var isX: Bool` that just checks case membership
+- **Acceptable**: Properties that extract associated values or compute display text
+
+---
 
 ❌ **Don't start with this:**
 ```typescript
