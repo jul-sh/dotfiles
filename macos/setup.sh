@@ -72,6 +72,89 @@ install_desktop_apps() {
     done
 }
 
+configure_default_apps() {
+    echo "Configuring default apps..."
+    ensure_homebrew
+    if ! command -v duti &>/dev/null; then
+        brew install duti || { echo "  warning: failed to install duti"; return; }
+    fi
+
+    # Set Zed as default for text/code files
+    local utis=(
+        public.plain-text
+        public.source-code
+        public.shell-script
+        public.json
+        public.xml
+        public.yaml
+        public.python-script
+        public.ruby-script
+        public.perl-script
+        public.php-script
+        public.c-source
+        public.c-header
+        public.c-plus-plus-source
+        public.objective-c-source
+        public.swift-source
+        net.daringfireball.markdown
+    )
+    for uti in "${utis[@]}"; do
+        duti -s dev.zed.Zed "$uti" all 2>/dev/null || true
+    done
+
+    # PDF -> Preview
+    duti -s com.apple.Preview com.adobe.pdf all 2>/dev/null || true
+}
+
+install_screensaver() {
+    local saver_dir="$HOME/Library/Screen Savers"
+    local saver_path="$saver_dir/Snoopy.saver"
+    local expected_hash="96a935e41aa94b503b6bdbda0754691bc18c301b5a7ccdc0b1a38b6258768876"
+
+    if [[ -d "$saver_path" ]]; then
+        echo "Snoopy screen saver already installed."
+        return
+    fi
+
+    echo "Installing Snoopy screen saver..."
+    mkdir -p "$saver_dir"
+    local tmp_zip
+    tmp_zip=$(mktemp)
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+
+    local download_url
+    download_url=$(curl -sL "https://api.github.com/repos/YaxinCheng/Snoopy/releases/latest" | grep -o '"browser_download_url": "[^"]*Snoopy.saver.zip"' | cut -d'"' -f4)
+
+    if [[ -z "$download_url" ]]; then
+        echo "  warning: could not find Snoopy.saver.zip download URL"
+        rm -rf "$tmp_zip" "$tmp_dir"
+        return
+    fi
+
+    curl -sL "$download_url" -o "$tmp_zip" || { echo "  warning: failed to download"; rm -rf "$tmp_zip" "$tmp_dir"; return; }
+
+    # Verify hash before installing
+    local actual_hash
+    actual_hash=$(shasum -a 256 "$tmp_zip" | cut -d' ' -f1)
+    if [[ "$actual_hash" != "$expected_hash" ]]; then
+        echo "  warning: hash mismatch! expected $expected_hash, got $actual_hash"
+        echo "  skipping installation - update expected_hash in setup.sh if this is a new trusted release"
+        rm -rf "$tmp_zip" "$tmp_dir"
+        return
+    fi
+
+    unzip -q "$tmp_zip" -d "$tmp_dir" || { echo "  warning: failed to unzip"; rm -rf "$tmp_zip" "$tmp_dir"; return; }
+    mv "$tmp_dir/Snoopy.saver" "$saver_path"
+    rm -rf "$tmp_zip" "$tmp_dir"
+
+    # Remove quarantine flag to avoid Gatekeeper prompt
+    xattr -rd com.apple.quarantine "$saver_path" 2>/dev/null || true
+
+    # Set as default screen saver
+    defaults -currentHost write com.apple.screensaver moduleDict -dict moduleName -string "Snoopy" path -string "$saver_path" type -int 0
+}
+
 build_spotlight_scripts() {
     local script="./macos/raycast_scripts/build_spotlight_apps.sh"
     if [[ -f "$script" ]]; then
@@ -264,6 +347,19 @@ configure_user_defaults() {
 
     defaults write com.apple.screencapture location -string "${HOME}/Downloads"
     defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+    defaults write NSGlobalDomain AppleAccentColor -int 6
+    defaults write NSGlobalDomain AppleHighlightColor -string "1.000000 0.749020 0.823529 Pink"
+    defaults write NSGlobalDomain AppleIconAppearanceTintColor -string "Blue"
+
+    # Disable hot corners
+    defaults write com.apple.dock wvous-tl-corner -int 1
+    defaults write com.apple.dock wvous-tr-corner -int 1
+    defaults write com.apple.dock wvous-bl-corner -int 1
+    defaults write com.apple.dock wvous-br-corner -int 1
+    defaults write com.apple.dock wvous-tl-modifier -int 0
+    defaults write com.apple.dock wvous-tr-modifier -int 0
+    defaults write com.apple.dock wvous-bl-modifier -int 0
+    defaults write com.apple.dock wvous-br-modifier -int 0
     defaults write com.apple.dock show-recents -int 0
     defaults write com.apple.dock minimize-to-application -int 0
     defaults write com.apple.dock tilesize -int 34
@@ -331,6 +427,8 @@ main() {
 
     resolve_setup_scope
     install_desktop_apps
+    configure_default_apps
+    install_screensaver
     build_spotlight_scripts
     echo "Configuring user defaults..."
     configure_user_defaults
