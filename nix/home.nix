@@ -29,7 +29,7 @@ in
     starship
     mcfly
     uv
-    # inputs.fresh.packages.${pkgs.system}.default  # TODO: fix fresh flake plan.md error
+    inputs.fresh.packages.${pkgs.system}.default
     zellij
     git
     git-lfs

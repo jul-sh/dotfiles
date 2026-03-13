@@ -25,7 +25,7 @@
       flake = false; # This is just source code, not a flake
     };
 
-    fresh.url = "github:sinelaw/fresh/v0.2.14";
+    fresh.url = "github:sinelaw/fresh/v0.2.13";
 
     # Pinned nixpkgs for atuin 18.12.1 (fixes macOS Tahoe/zsh crash)
     nixpkgs-atuin.url = "github:nixos/nixpkgs/66e918c518991dc4275d94b8e1d87a7d46d67201";

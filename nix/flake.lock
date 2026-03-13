@@ -80,16 +80,16 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1772809255,
-        "narHash": "sha256-Vaoa+jcxlHPQy0rn67Va5ZKAegw5dXSL9Kkx/uazir4=",
+        "lastModified": 1772745992,
+        "narHash": "sha256-8hQHQ2J2Xn6sD402wz0LhlDDW6wmBj5Pm9bzjgnFI4w=",
         "owner": "sinelaw",
         "repo": "fresh",
-        "rev": "378c87269d91171e457f7f75bfe064a44cb6ecac",
+        "rev": "a2ffa1f4649ecf3fa8ebb8ec2d8c3b8609707e49",
         "type": "github"
       },
       "original": {
         "owner": "sinelaw",
-        "ref": "v0.2.14",
+        "ref": "v0.2.13",
         "repo": "fresh",
         "type": "github"
       }
@@ -220,16 +220,17 @@
     "zsh-autocomplete": {
       "flake": false,
       "locked": {
-        "lastModified": 1773229154,
-        "narHash": "sha256-4lJ0bw/Ac2L6kyvynS/4Zkz+Caoo4Ib2/mBEpIJmbxI=",
+        "lastModified": 1765295438,
+        "narHash": "sha256-998rYEyYD67XleSDbqvnQptRrGuG2N2AgFvTpFWvoV8=",
         "owner": "marlonrichert",
         "repo": "zsh-autocomplete",
-        "rev": "2be4e7f0b435138b0237d4f068b2a882fb06edc4",
+        "rev": "bbba73ebdc7c01323e09d4d518e51e2d6847ccc2",
         "type": "github"
       },
       "original": {
         "owner": "marlonrichert",
         "repo": "zsh-autocomplete",
+        "rev": "bbba73ebdc7c01323e09d4d518e51e2d6847ccc2",
         "type": "github"
       }
     },
