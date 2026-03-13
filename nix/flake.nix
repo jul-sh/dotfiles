@@ -20,7 +20,8 @@
     };
 
     zsh-autocomplete = {
-      url = "github:marlonrichert/zsh-autocomplete";
+      # Pinned to older version - newer versions break atuin's zle widgets
+      url = "github:marlonrichert/zsh-autocomplete/bbba73ebdc7c01323e09d4d518e51e2d6847ccc2";
       flake = false; # This is just source code, not a flake
     };
 
