@@ -32,12 +32,41 @@ else
   compinit -i -d ~/.zcompdump # Use existing dump file without checks
 fi
 
-# Completion settings
-zstyle ':completion:*' menu select
-zmodload zsh/complist
+# Autocomplete keybindings
+bindkey '^I' menu-select
 bindkey -M menuselect '^I' menu-complete
+zstyle ':autocomplete:tab:*' widget-style menu-complete
 bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
+zstyle ':autocomplete:*' min-input 3
+# Don't prompt for confirmation if there's many completions to show
+zstyle ':completion:*' menu yes select
+# Esc to exit autocomplete menu
 bindkey -M menuselect '^[' undo
+# Restore default history binding, otherwise occupied by zsh autocomplete
+bindkey -M emacs \
+    "^[p"   .history-search-backward \
+    "^[n"   .history-search-forward \
+    "^P"    .up-line-or-history \
+    "^[OA"  .up-line-or-history \
+    "^[[A"  .up-line-or-history \
+    "^N"    .down-line-or-history \
+    "^[OB"  .down-line-or-history \
+    "^[[B"  .down-line-or-history \
+    "^R"    .history-incremental-search-backward \
+    "^S"    .history-incremental-search-forward \
+    #
+bindkey -a \
+    "^P"    .up-history \
+    "^N"    .down-history \
+    "k"     .up-line-or-history \
+    "^[OA"  .up-line-or-history \
+    "^[[A"  .up-line-or-history \
+    "j"     .down-line-or-history \
+    "^[OB"  .down-line-or-history \
+    "^[[B"  .down-line-or-history \
+    "/"     .vi-history-search-backward \
+    "?"     .vi-history-search-forward \
+    #
 
 # Use mcfly for history search
 if command -v mcfly &> /dev/null; then
