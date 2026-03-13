@@ -27,9 +27,9 @@ in
   home.packages = with pkgs; [
     coreutils
     starship
-    inputs.nixpkgs-atuin.legacyPackages.${pkgs.system}.atuin
+    mcfly
     uv
-    inputs.fresh.packages.${pkgs.system}.default
+    # inputs.fresh.packages.${pkgs.system}.default  # TODO: fix fresh flake plan.md error
     zellij
     git
     git-lfs
