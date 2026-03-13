@@ -39,9 +39,15 @@ bindkey -M menuselect '^I' menu-complete
 bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
 bindkey -M menuselect '^[' undo
 
-# Use atuin for history search
-if command -v atuin &> /dev/null; then
-  eval "$(atuin init zsh)"
+# Use mcfly for history search
+if command -v mcfly &> /dev/null; then
+  export MCFLY_RESULTS=20
+  export MCFLY_INTERFACE_VIEW=BOTTOM
+  export MCFLY_RESULTS_SORT=LAST_RUN
+  eval "$(mcfly init zsh)"
+  # Bind up arrow to mcfly
+  bindkey '^[[A' mcfly-history-widget
+  bindkey '^[OA' mcfly-history-widget
 fi
 
 
