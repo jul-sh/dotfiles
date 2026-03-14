@@ -68,15 +68,9 @@ bindkey -a \
     "?"     .vi-history-search-forward \
     #
 
-# Use mcfly for history search
-if command -v mcfly &> /dev/null; then
-  export MCFLY_RESULTS=20
-  export MCFLY_INTERFACE_VIEW=BOTTOM
-  export MCFLY_RESULTS_SORT=LAST_RUN
-  eval "$(mcfly init zsh)"
-  # Bind up arrow to mcfly
-  bindkey '^[[A' mcfly-history-widget
-  bindkey '^[OA' mcfly-history-widget
+# Use atuin for history search
+if command -v atuin &> /dev/null; then
+  eval "$(atuin init zsh)"
 fi
 
 
