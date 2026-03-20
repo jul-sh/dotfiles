@@ -38,6 +38,8 @@ in
     direnv
     nodejs
     iosevka-charon
+  ] ++ lib.optionals (inputs.tapkey.packages ? ${pkgs.system} && inputs.tapkey.packages.${pkgs.system} ? default) [
+    inputs.tapkey.packages.${pkgs.system}.default
   ];
 
   # --- 2. Dotfiles ---
