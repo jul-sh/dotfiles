@@ -45,3 +45,11 @@ END_OF_INSTRUCTION
 
   echo "✨ finished formatting"
 }
+
+claude() {
+  if [ -n "$ZELLIJ" ]; then
+    command claude "$@"
+  else
+    exec zellij --layout compact -- command claude "$@"
+  fi
+}

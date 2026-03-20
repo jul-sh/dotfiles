@@ -1,3 +1,5 @@
+#!/usr/bin/env zsh
+
 # Print a greeting message
 echo -e "\e[3mHi girl, you're doing great this $(date +"%A"). —ฅ/ᐠ. ̫.ᐟ\ฅ—\e[0m"
 
