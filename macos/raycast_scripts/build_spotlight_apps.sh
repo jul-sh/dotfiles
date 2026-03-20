@@ -54,7 +54,7 @@ on run
         return
     end try
     if userArg is "" then return
-    do shell script "/usr/bin/osascript " & quoted form of scriptPath & " " & quoted form of userArg
+    do shell script "/usr/bin/osascript " & quoted form of scriptPath & " " & quoted form of userArg & " &> /dev/null &"
 end run
 APPLESCRIPT
 )"
@@ -63,7 +63,7 @@ APPLESCRIPT
     applescript="$(cat <<APPLESCRIPT
 on run
     set scriptPath to "$script_path_escaped"
-    do shell script "/usr/bin/osascript " & quoted form of scriptPath
+    do shell script "/usr/bin/osascript " & quoted form of scriptPath & " &> /dev/null &"
 end run
 APPLESCRIPT
 )"
