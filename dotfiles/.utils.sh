@@ -46,13 +46,14 @@ END_OF_INSTRUCTION
   echo "✨ finished formatting"
 }
 
-claude() {
+cl() {
   if [ -n "$ZELLIJ" ]; then
     command claude "$@"
   else
     exec zellij --layout compact -- command claude "$@"
   fi
 }
+
 # ai <task> - Quick AI helper (auto-accepts, exits when done)
 # ai -c     - Continue last conversation in interactive mode
 # ai -n     - Start fresh session (don't continue previous)
