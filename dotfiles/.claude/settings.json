@@ -1,4 +1,8 @@
 {
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "permissions": {
     "allow": [
       "Read(~/Downloads/**)"
@@ -8,11 +12,11 @@
     "type": "command",
     "command": "/Users/julsh/.claude/statusline-kawaii.sh"
   },
-  "alwaysThinkingEnabled": false,
-  "attribution": {
-    "commit": "",
-    "pr": ""
+  "enabledPlugins": {
+    "swift-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true
   },
-  "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-  "skipDangerousModePermissionPrompt": true
+  "alwaysThinkingEnabled": false,
+  "skipDangerousModePermissionPrompt": true,
+  "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
 }
