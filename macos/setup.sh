@@ -364,6 +364,11 @@ configure_user_defaults() {
         install_launchagent ./macos/sleep_on_lid_close.sh ./macos/com.julsh.sleeponlidclose.plist
     fi
 
+    # Shift+Cmd+V → Paste without formatting (works across all apps with a Paste menu item)
+    # @=Cmd, $=Shift, so @$v = Shift+Cmd+V
+    defaults write NSGlobalDomain NSUserKeyEquivalents -dict-add "Paste and Match Style" -string '@$v'
+    defaults write NSGlobalDomain NSUserKeyEquivalents -dict-add "Paste and Match Formatting" -string '@$v'
+
     defaults write com.apple.screencapture location -string "${HOME}/Downloads"
     defaults write NSGlobalDomain AppleShowAllExtensions -bool true
     defaults write NSGlobalDomain AppleAccentColor -int 6
