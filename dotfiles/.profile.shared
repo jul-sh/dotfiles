@@ -53,3 +53,9 @@ if command -v python3 &> /dev/null; then
   export PATH="$(python3 -m site --user-base)/bin:$PATH"
   alias python='python3'
 fi
+
+# Re-prepend Nix profile so nix-installed packages take precedence
+# over user-level package managers above (cargo, uv, go, npm)
+if [ -d "$HOME/.nix-profile/bin" ]; then
+  export PATH="$HOME/.nix-profile/bin:$PATH"
+fi
