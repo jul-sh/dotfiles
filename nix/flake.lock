@@ -139,11 +139,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1774116738,
-        "narHash": "sha256-MyjXvbS1t1xCCwx896JcInj2yd3SQQd2KoIoIknTHcA=",
+        "lastModified": 1774149564,
+        "narHash": "sha256-rBYp2yjiGqJCHAate23/caaxu7lYV660YsIvlsDrz6Y=",
         "owner": "jul-sh",
         "repo": "keytap",
-        "rev": "ecbfd924454f3db036aa15f466c84f871f7cb5b8",
+        "rev": "e57b0b34f30cf542dea2e7e533766f91198a30c2",
         "type": "github"
       },
       "original": {
