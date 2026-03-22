@@ -133,6 +133,25 @@
         "type": "github"
       }
     },
+    "keytap": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1774116738,
+        "narHash": "sha256-MyjXvbS1t1xCCwx896JcInj2yd3SQQd2KoIoIknTHcA=",
+        "owner": "jul-sh",
+        "repo": "keytap",
+        "rev": "ecbfd924454f3db036aa15f466c84f871f7cb5b8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "jul-sh",
+        "repo": "keytap",
+        "type": "github"
+      }
+    },
     "local-host": {
       "locked": {
         "path": "./hosts/default",
@@ -193,22 +212,6 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1773964973,
-        "narHash": "sha256-NV/J+tTER0P5iJhUDL/8HO5MDjDceLQPRUYgdmy5wXw=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "812b3986fd1568f7a858f97fcf425ad996ba7d25",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "ref": "nixos-25.11",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs_3": {
-      "locked": {
         "lastModified": 1773628058,
         "narHash": "sha256-hpXH0z3K9xv0fHaje136KY872VT2T5uwxtezlAskQgY=",
         "owner": "NixOS",
@@ -223,14 +226,30 @@
         "type": "github"
       }
     },
+    "nixpkgs_3": {
+      "locked": {
+        "lastModified": 1773964973,
+        "narHash": "sha256-NV/J+tTER0P5iJhUDL/8HO5MDjDceLQPRUYgdmy5wXw=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "812b3986fd1568f7a858f97fcf425ad996ba7d25",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-25.11",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "fresh": "fresh",
         "home-manager": "home-manager",
+        "keytap": "keytap",
         "local-host": "local-host",
-        "nixpkgs": "nixpkgs_2",
+        "nixpkgs": "nixpkgs_3",
         "nixpkgs-atuin": "nixpkgs-atuin",
-        "tapkey": "tapkey",
         "zsh-autocomplete": "zsh-autocomplete",
         "zsh-syntax-highlighting": "zsh-syntax-highlighting"
       }
@@ -264,25 +283,6 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
-        "type": "github"
-      }
-    },
-    "tapkey": {
-      "inputs": {
-        "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs_3"
-      },
-      "locked": {
-        "lastModified": 1774116738,
-        "narHash": "sha256-MyjXvbS1t1xCCwx896JcInj2yd3SQQd2KoIoIknTHcA=",
-        "owner": "jul-sh",
-        "repo": "tapkey",
-        "rev": "ecbfd924454f3db036aa15f466c84f871f7cb5b8",
-        "type": "github"
-      },
-      "original": {
-        "owner": "jul-sh",
-        "repo": "tapkey",
         "type": "github"
       }
     },
