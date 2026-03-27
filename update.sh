@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Updates flake.lock and iosevka-charon font to latest versions.
+# Updates flake.lock and fonts to latest versions.
 #
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
@@ -33,9 +33,34 @@ update_iosevka_charon() {
     echo "  Updated to $version"
 }
 
+update_recursive_charon() {
+    echo "Updating recursive-charon..."
+    local api_url="https://api.github.com/repos/jul-sh/recursive-charon/releases"
+    local tmp_json
+    tmp_json=$(mktemp)
+
+    curl -fsSL "$api_url" -o "$tmp_json"
+
+    # Get the first release (latest, including prereleases)
+    local version url sha256
+    version=$(jq -r '.[0].tag_name' "$tmp_json")
+    url=$(jq -r '.[0].assets[] | select(.name == "Static_OTF.zip") | .browser_download_url' "$tmp_json")
+    rm "$tmp_json"
+
+    echo "  Fetching hash for $version..."
+    sha256=$(curl -fsSL "$url" | shasum -a 256 | awk '{print $1}')
+
+    # Update version and sha256 in home.nix (matched by trailing marker comment)
+    perl -i -pe "s|version = \".*?\"; # recursive-charon|version = \"$version\"; # recursive-charon|" nix/home.nix
+    perl -i -pe "s|sha256 = \".*?\"; # recursive-charon|sha256 = \"$sha256\"; # recursive-charon|" nix/home.nix
+
+    echo "  Updated to $version"
+}
+
 main() {
     update_flake
     update_iosevka_charon
+    update_recursive_charon
     echo "Done."
 }
 
