@@ -70,5 +70,10 @@ APPLESCRIPT
   fi
 
   printf '%s\n' "$applescript" | osacompile -o "$app_path"
+
+  # Make the app a background agent so it doesn't stay open in the Dock
+  /usr/libexec/PlistBuddy -c "Add :LSBackgroundOnly bool true" "$app_path/Contents/Info.plist" 2>/dev/null || \
+    /usr/libexec/PlistBuddy -c "Set :LSBackgroundOnly true" "$app_path/Contents/Info.plist"
+
   echo "Created: $app_path"
 done
