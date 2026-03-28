@@ -1,6 +1,20 @@
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
 [features]
 multi_agent = true
 
 [agents]
 max_threads = 6   # Limits concurrent agents to 6
 max_depth = 1     # Allows the main agent to spawn 1 level of sub-agents
+
+[plugins."google-calendar@openai-curated"]
+enabled = true
+
+[plugins."gmail@openai-curated"]
+enabled = true
+
+[plugins."github@openai-curated"]
+enabled = true
+
+[plugins."google-drive@openai-curated"]
+enabled = true
