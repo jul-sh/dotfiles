@@ -5,15 +5,9 @@
   },
   "permissions": {
     "allow": [
-      "Bash",
-      "Read",
-      "Edit",
-      "Write",
-      "WebFetch",
-      "Grep"
+      "Read(~/Downloads/**)"
     ]
   },
-  "defaultMode": "bypassPermissions",
   "statusLine": {
     "type": "command",
     "command": "/Users/julsh/.claude/statusline-kawaii.sh"
@@ -29,15 +23,10 @@
         "source": "github",
         "repo": "jul-sh/claude-plugins"
       }
-    },
-    "jul-sh-claude-plugins": {
-      "source": {
-        "source": "github",
-        "repo": "jul-sh/claude-plugins"
-      }
     }
   },
   "alwaysThinkingEnabled": false,
   "skipDangerousModePermissionPrompt": true,
-  "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+  "bashToolTimeout": 1500000
 }
