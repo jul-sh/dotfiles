@@ -5,16 +5,37 @@
   },
   "permissions": {
     "allow": [
-      "Read(~/Downloads/**)"
+      "Bash",
+      "Read",
+      "Edit",
+      "Write",
+      "WebFetch",
+      "Grep"
     ]
   },
+  "defaultMode": "bypassPermissions",
   "statusLine": {
     "type": "command",
     "command": "/Users/julsh/.claude/statusline-kawaii.sh"
   },
   "enabledPlugins": {
     "swift-lsp@claude-plugins-official": true,
-    "rust-analyzer-lsp@claude-plugins-official": true
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "captain-codex@jul-sh-claude-plugins": true
+  },
+  "extraKnownMarketplaces": {
+    "jul-sh": {
+      "source": {
+        "source": "github",
+        "repo": "jul-sh/claude-plugins"
+      }
+    },
+    "jul-sh-claude-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "jul-sh/claude-plugins"
+      }
+    }
   },
   "alwaysThinkingEnabled": false,
   "skipDangerousModePermissionPrompt": true,
