@@ -165,7 +165,17 @@ install_git_hooks() {
     ln -sf ../../hooks/pre-push .git/hooks/pre-push
 }
 
+install_nix_custom_conf() {
+    local src="./nix/nix.custom.conf"
+    local dst="/etc/nix/nix.custom.conf"
+    if [[ -f "$src" ]] && ! diff -q "$src" "$dst" &>/dev/null; then
+        echo "Installing nix.custom.conf..."
+        sudo cp "$src" "$dst"
+    fi
+}
+
 run_setup() {
+    install_nix_custom_conf
     apply_nix_config
     symlink_dotfiles
     setup_local_rc_files
