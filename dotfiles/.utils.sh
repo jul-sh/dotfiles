@@ -215,6 +215,22 @@ attach() {
     fi
 }
 
+# Completion for attach: offers --list flag and existing zellij session names
+_attach() {
+    _arguments '1:session:->session'
+    case $state in
+        session)
+            local -a sessions
+            sessions=(--list)
+            if command -v zellij &> /dev/null; then
+                sessions+=(${(f)"$(zellij list-sessions 2>/dev/null | perl -pe 's/\e\[\d*(;\d+)*m//g' | awk '{print $1}')"})
+            fi
+            compadd -a sessions
+            ;;
+    esac
+}
+compdef _attach attach
+
 # Initialize Git LFS with absolute paths in hooks (fixes Homebrew subprocess issues)
 if command -v git-lfs &> /dev/null; then
   git lfs install --skip-smudge >/dev/null 2>&1
