@@ -367,9 +367,10 @@ configure_user_defaults() {
     # Swap paste shortcuts: Cmd+V pastes without formatting, Shift+Cmd+V pastes with formatting
     # @=Cmd, $=Shift, ~=Option
     # @v = Cmd+V, @$v = Shift+Cmd+V
-    defaults write NSGlobalDomain NSUserKeyEquivalents -dict-add "Paste and Match Style" -string '@v'
-    defaults write NSGlobalDomain NSUserKeyEquivalents -dict-add "Paste and Match Formatting" -string '@v'
-    defaults write NSGlobalDomain NSUserKeyEquivalents -dict-add "Paste" -string '@$v'
+    # Revert paste shortcuts to default
+    /usr/libexec/PlistBuddy -c "Delete :NSUserKeyEquivalents:'Paste and Match Style'" ~/Library/Preferences/.GlobalPreferences.plist 2>/dev/null || true
+    /usr/libexec/PlistBuddy -c "Delete :NSUserKeyEquivalents:'Paste and Match Formatting'" ~/Library/Preferences/.GlobalPreferences.plist 2>/dev/null || true
+    /usr/libexec/PlistBuddy -c "Delete :NSUserKeyEquivalents:Paste" ~/Library/Preferences/.GlobalPreferences.plist 2>/dev/null || true
 
     defaults write com.apple.screencapture location -string "${HOME}/Downloads"
     defaults write NSGlobalDomain AppleShowAllExtensions -bool true
