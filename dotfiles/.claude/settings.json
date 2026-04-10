@@ -4,9 +4,13 @@
     "pr": ""
   },
   "permissions": {
-    "allow": [
-      "Read(~/Downloads/**)"
-    ]
+    "allow": ["Read(~/Downloads/**)"]
+  },
+  "autoApprove": {
+    "enabled": true,
+    "commands": ["*"],
+    "filesystem": ["*"],
+    "riskLevel": "high"
   },
   "statusLine": {
     "type": "command",

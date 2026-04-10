@@ -18,3 +18,9 @@ enabled = true
 
 [plugins."google-drive@openai-curated"]
 enabled = true
+
+[projects."/Users/julsh/git/tapkey"]
+trust_level = "trusted"
+
+[projects."/Users/julsh/git/clipkitty"]
+trust_level = "trusted"
