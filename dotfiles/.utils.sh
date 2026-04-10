@@ -229,7 +229,9 @@ _attach() {
             ;;
     esac
 }
-compdef _attach attach
+if type compdef &> /dev/null; then
+    compdef _attach attach
+fi
 
 # Initialize Git LFS with absolute paths in hooks (fixes Homebrew subprocess issues)
 if command -v git-lfs &> /dev/null; then
