@@ -24,17 +24,18 @@ ensure_checkout_dir() {
 update_existing_repo() {
     [ -d "$CHECKOUT_DIR/.git" ] || return 1
 
-    # [POSIX] local origin current_branch default_branch ref
-    origin="" current_branch="" default_branch="" ref=""
+    # [POSIX] local origin default_branch ref
+    origin="" default_branch="" ref=""
     origin="$(git -C "$CHECKOUT_DIR" remote get-url origin 2>/dev/null || true)"
     [ "$origin" = "$REPO_URL" ] || die "existing $CHECKOUT_DIR origin is '$origin', expected '$REPO_URL'"
 
     git -C "$CHECKOUT_DIR" fetch --prune origin
     default_branch="$(git -C "$CHECKOUT_DIR" remote show origin | sed -n 's/^  HEAD branch: //p')"
-    current_branch="$(git -C "$CHECKOUT_DIR" symbolic-ref --short HEAD 2>/dev/null || true)"
-    ref="${TARGET_REF:-${current_branch:-${default_branch:-main}}}"
+    default_branch="${default_branch:-main}"
+    ref="${TARGET_REF:-$default_branch}"
 
-    git -C "$CHECKOUT_DIR" checkout "$ref" >/dev/null 2>&1 || true
+    git -C "$CHECKOUT_DIR" checkout "$ref" >/dev/null 2>&1 \
+        || die "failed to checkout '$ref' in $CHECKOUT_DIR"
     # Check for local changes before pulling
     if ! git -C "$CHECKOUT_DIR" diff --quiet || ! git -C "$CHECKOUT_DIR" diff --staged --quiet; then
         echo "################################################################################"
