@@ -412,30 +412,37 @@ configure_user_defaults() {
 
 configure_touch_id_sudo() {
     local sudo_pam="/etc/pam.d/sudo_local"
-    local tid_line="auth       sufficient     pam_tid.so"
+    local template="/etc/pam.d/sudo_local.template"
 
-    # macOS uses sudo_local for local customizations (survives OS updates)
-    if [[ -f "$sudo_pam" ]] && grep -q "pam_tid.so" "$sudo_pam"; then
+    if [[ -f "$sudo_pam" ]] && grep -qE '^[[:space:]]*auth[[:space:]]+sufficient[[:space:]]+pam_tid\.so' "$sudo_pam"; then
         echo "Touch ID for sudo already configured."
         return
     fi
 
     echo "Enabling Touch ID for sudo..."
-    # Create sudo_local with Touch ID if it doesn't exist
-    if [[ ! -f "$sudo_pam" ]]; then
-        sudo tee "$sudo_pam" > /dev/null <<EOF
-# sudo_local: local config file which survives system updates
-$tid_line
-EOF
+    local tmp_file
+    tmp_file=$(mktemp)
+    if [[ -f "$sudo_pam" ]]; then
+        sed -E 's/^[[:space:]]*#[[:space:]]*(auth[[:space:]]+sufficient[[:space:]]+pam_tid\.so)/\1/' "$sudo_pam" > "$tmp_file"
+        if ! grep -qE '^[[:space:]]*auth[[:space:]]+sufficient[[:space:]]+pam_tid\.so' "$tmp_file"; then
+            echo "auth       sufficient     pam_tid.so" >> "$tmp_file"
+        fi
+    elif [[ -f "$template" ]]; then
+        sed -E 's/^[[:space:]]*#[[:space:]]*(auth[[:space:]]+sufficient[[:space:]]+pam_tid\.so)/\1/' "$template" > "$tmp_file"
     else
-        # Prepend to existing file (must be before other auth lines)
-        local tmp_file
-        tmp_file=$(mktemp)
-        echo "$tid_line" | cat - "$sudo_pam" > "$tmp_file"
-        sudo mv "$tmp_file" "$sudo_pam"
+        cat > "$tmp_file" <<EOF
+# sudo_local: local config file which survives system updates
+auth       sufficient     pam_tid.so
+EOF
     fi
-    sudo chmod 444 "$sudo_pam"
-    sudo chown root:wheel "$sudo_pam"
+
+    if ! sudo install -o root -g wheel -m 444 "$tmp_file" "$sudo_pam" 2>/dev/null; then
+        rm -f "$tmp_file"
+        echo "Warning: could not write $sudo_pam (Operation not permitted)." >&2
+        echo "Grant your terminal Full Disk Access in System Settings > Privacy & Security, then re-run." >&2
+        return
+    fi
+    rm -f "$tmp_file"
 }
 
 configure_system_defaults() {
