@@ -111,7 +111,7 @@ install_screensaver() {
     local saver_path="$saver_dir/Snoopy.saver"
     local expected_hash="96a935e41aa94b503b6bdbda0754691bc18c301b5a7ccdc0b1a38b6258768876"
 
-    if [[ -d "$saver_path" ]]; then
+    if [[ -d "$saver_path" || -d "/Library/Screen Savers/Snoopy.saver" ]]; then
         echo "Snoopy screen saver already installed."
         return
     fi
