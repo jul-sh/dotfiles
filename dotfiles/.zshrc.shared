@@ -4,6 +4,14 @@
 echo -e "\e[3mHi girl, you're doing great this $(date +"%A"). —ฅ/ᐠ. ̫.ᐟ\ฅ—\e[0m"
 
 # --------------------------------
+# Profile
+# --------------------------------
+
+if [ -f "$HOME/.profile" ]; then
+  source "$HOME/.profile"
+fi
+
+# --------------------------------
 # ZSH Other Configuration
 # --------------------------------
 
