@@ -94,9 +94,38 @@ if command -v find >/dev/null 2>&1; then
 fi'
 
         if [[ -f "$target" ]]; then
+            local needs_shared=false
+            local needs_env=false
+            
+            if ! grep -q "${shared}" "$target"; then
+                needs_shared=true
+            fi
+            
             if ! grep -q "Source .ENV" "$target"; then
+                needs_env=true
+            fi
+            
+            if [ "$needs_shared" = true ] || [ "$needs_env" = true ]; then
                 echo "Updating ${rc}..."
-                echo "$env_logic" >> "$target"
+                local tmpfile=$(mktemp)
+                
+                if [ "$needs_shared" = true ]; then
+                    cat >> "$tmpfile" <<EOF
+# Source shared configuration (managed by Nix Home Manager)
+[ -f "\${HOME}/${shared}" ] && . "\${HOME}/${shared}"
+
+EOF
+                fi
+                
+                if [ "$needs_env" = true ]; then
+                    cat >> "$tmpfile" <<EOF
+$env_logic
+
+EOF
+                fi
+                
+                cat "$target" >> "$tmpfile"
+                mv "$tmpfile" "$target"
             fi
         else
             echo "Creating ${rc}..."
