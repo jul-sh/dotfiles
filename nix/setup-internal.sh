@@ -84,56 +84,30 @@ setup_local_rc_files() {
         local rc="${pair%%:*}"
         local shared="${pair#*:}"
         local target="${HOME}/${rc}"
+        local marker="# >>> jul-sh/dotfiles managed block >>>"
+        local end_marker="# <<< jul-sh/dotfiles managed block <<<"
 
-        local env_logic='
-# Source .ENV (case invariant) if it exists
-if command -v find >/dev/null 2>&1; then
-    _env_file=$(find "$HOME" -maxdepth 1 -iname ".env" -type f | head -n 1)
-    [ -n "$_env_file" ] && . "$_env_file"
-    unset _env_file
-fi'
+        local inject_logic="[ -f \"\${HOME}/${shared}\" ] && . \"\${HOME}/${shared}\""
 
         if [[ -f "$target" ]]; then
-            local needs_shared=false
-            local needs_env=false
-            
-            if ! grep -q "${shared}" "$target"; then
-                needs_shared=true
-            fi
-            
-            if ! grep -q "Source .ENV" "$target"; then
-                needs_env=true
-            fi
-            
-            if [ "$needs_shared" = true ] || [ "$needs_env" = true ]; then
+            if ! grep -q "$marker" "$target"; then
                 echo "Updating ${rc}..."
                 local tmpfile=$(mktemp)
-                
-                if [ "$needs_shared" = true ]; then
-                    cat >> "$tmpfile" <<EOF
-# Source shared configuration (managed by Nix Home Manager)
-[ -f "\${HOME}/${shared}" ] && . "\${HOME}/${shared}"
+                cat >> "$tmpfile" <<EOF
+$marker
+$inject_logic
+$end_marker
 
 EOF
-                fi
-                
-                if [ "$needs_env" = true ]; then
-                    cat >> "$tmpfile" <<EOF
-$env_logic
-
-EOF
-                fi
-                
                 cat "$target" >> "$tmpfile"
                 mv "$tmpfile" "$target"
             fi
         else
             echo "Creating ${rc}..."
             cat > "$target" <<EOF
-# Source shared configuration (managed by Nix Home Manager)
-[ -f "\${HOME}/${shared}" ] && . "\${HOME}/${shared}"
-
-$env_logic
+$marker
+$inject_logic
+$end_marker
 
 # Machine-specific configuration below
 
