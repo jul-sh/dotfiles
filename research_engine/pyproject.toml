@@ -1,0 +1,26 @@
+[project]
+name = "always-on-research-engine"
+version = "0.1.0"
+description = "Always-on literature-grounded autonomous research system built on antigravity SDK"
+requires-python = ">=3.11"
+dependencies = [
+  "pydantic>=2.8",
+  "sqlalchemy>=2.0",
+  "tenacity>=9.0",
+  "typer>=0.12",
+  "python-dateutil>=2.9",
+  "pyyaml>=6.0",
+]
+
+[project.scripts]
+research-engine = "research_engine.cli:app"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
