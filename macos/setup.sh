@@ -364,13 +364,9 @@ configure_user_defaults() {
         install_launchagent ./macos/sleep_on_lid_close.sh ./macos/com.julsh.sleeponlidclose.plist
     fi
 
-    # Swap paste shortcuts: Cmd+V pastes without formatting, Shift+Cmd+V pastes with formatting
-    # @=Cmd, $=Shift, ~=Option
-    # @v = Cmd+V, @$v = Shift+Cmd+V
-    # Revert paste shortcuts to default
-    /usr/libexec/PlistBuddy -c "Delete :NSUserKeyEquivalents:'Paste and Match Style'" ~/Library/Preferences/.GlobalPreferences.plist 2>/dev/null || true
-    /usr/libexec/PlistBuddy -c "Delete :NSUserKeyEquivalents:'Paste and Match Formatting'" ~/Library/Preferences/.GlobalPreferences.plist 2>/dev/null || true
-    /usr/libexec/PlistBuddy -c "Delete :NSUserKeyEquivalents:Paste" ~/Library/Preferences/.GlobalPreferences.plist 2>/dev/null || true
+    # Bind Shift+Cmd+V to "Paste and Match Style" (paste without formatting) globally.
+    # @=Cmd, $=Shift, ~=Option; @$v = Shift+Cmd+V
+    defaults write NSGlobalDomain NSUserKeyEquivalents -dict-add "Paste and Match Style" '@$v'
 
     defaults write com.apple.screencapture location -string "${HOME}/Downloads"
     defaults write NSGlobalDomain AppleShowAllExtensions -bool true
