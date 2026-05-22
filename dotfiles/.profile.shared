@@ -1,3 +1,8 @@
+if [ -n "${_PROFILE_SHARED_SOURCED:-}" ]; then
+  return 0
+fi
+export _PROFILE_SHARED_SOURCED=1
+
 # Shell sourcing order:
 #   .bash_profile / .zprofile → .profile.shared (this file) → sets PATH, sources Nix
 #   .bashrc                   → .bashrc.shared              → launches zsh
@@ -58,4 +63,11 @@ fi
 # over user-level package managers above (cargo, uv, go, npm)
 if [ -d "$HOME/.nix-profile/bin" ]; then
   export PATH="$HOME/.nix-profile/bin:$PATH"
+fi
+
+# Source .ENV (case invariant) if it exists
+if command -v find >/dev/null 2>&1; then
+    _env_file=$(find "$HOME" -maxdepth 1 -iname ".env" -type f | head -n 1)
+    [ -n "$_env_file" ] && . "$_env_file"
+    unset _env_file
 fi
