@@ -3,7 +3,7 @@
 if [ -n "${_ZSHRC_SHARED_SOURCED:-}" ]; then
   return 0
 fi
-export _ZSHRC_SHARED_SOURCED=1
+_ZSHRC_SHARED_SOURCED=1
 
 # Print a greeting message
 echo -e "\e[3mHi girl, you're doing great this $(date +"%A"). —ฅ/ᐠ. ̫.ᐟ\ฅ—\e[0m"

@@ -1,7 +1,7 @@
 if [ -n "${_PROFILE_SHARED_SOURCED:-}" ]; then
   return 0
 fi
-export _PROFILE_SHARED_SOURCED=1
+_PROFILE_SHARED_SOURCED=1
 
 # Shell sourcing order:
 #   .bash_profile / .zprofile → .profile.shared (this file) → sets PATH, sources Nix
