@@ -366,6 +366,10 @@ configure_user_defaults() {
 
     # Bind Shift+Cmd+V to "Paste and Match Style" (paste without formatting) globally.
     # @=Cmd, $=Shift, ~=Option; @$v = Shift+Cmd+V
+    # First clear any stale overrides from when Cmd+V was swapped to match-style,
+    # which otherwise leave Shift+Cmd+V bound to the wrong action.
+    /usr/libexec/PlistBuddy -c "Delete :NSUserKeyEquivalents:Paste" ~/Library/Preferences/.GlobalPreferences.plist 2>/dev/null || true
+    /usr/libexec/PlistBuddy -c "Delete :NSUserKeyEquivalents:'Paste and Match Formatting'" ~/Library/Preferences/.GlobalPreferences.plist 2>/dev/null || true
     defaults write NSGlobalDomain NSUserKeyEquivalents -dict-add "Paste and Match Style" '@$v'
 
     defaults write com.apple.screencapture location -string "${HOME}/Downloads"
