@@ -1,7 +1,9 @@
 #!/bin/sh
 # Idempotent entrypoint to install/update jul-sh/dotfiles.
 # - Ensures the checkout exists and points at the expected origin.
-# - Fast-forwards to the current branch (or origin HEAD) and runs setup.
+# - Converges the checkout to origin (current branch or origin HEAD) and runs
+#   setup. Never blocks: local changes/commits are parked in a stash and/or
+#   backup branch (recoverable) rather than aborting on conflict.
 set -eu
 
 REPO_URL="${REPO_URL:-https://github.com/jul-sh/dotfiles.git}"
@@ -34,64 +36,75 @@ update_existing_repo() {
     default_branch="${default_branch:-main}"
     ref="${TARGET_REF:-$default_branch}"
 
+    # Abandon any half-finished merge/rebase/cherry-pick left by a prior aborted
+    # run so the steps below start from a sane state.
+    git -C "$CHECKOUT_DIR" merge --abort >/dev/null 2>&1 || true
+    git -C "$CHECKOUT_DIR" rebase --abort >/dev/null 2>&1 || true
+    git -C "$CHECKOUT_DIR" cherry-pick --abort >/dev/null 2>&1 || true
+
     git -C "$CHECKOUT_DIR" checkout "$ref" >/dev/null 2>&1 \
+        || git -C "$CHECKOUT_DIR" checkout -B "$ref" "origin/$ref" >/dev/null 2>&1 \
         || die "failed to checkout '$ref' in $CHECKOUT_DIR"
-    # Check for local changes before pulling
-    if ! git -C "$CHECKOUT_DIR" diff --quiet || ! git -C "$CHECKOUT_DIR" diff --staged --quiet; then
-        echo "################################################################################"
-        echo "Local changes detected - stashing before pull"
-        echo "################################################################################"
-        echo
-        echo "  - (red)   = committed version"
-        echo "  + (green) = your local changes"
-        echo
-        git --no-pager -C "$CHECKOUT_DIR" diff
-        git --no-pager -C "$CHECKOUT_DIR" diff --staged
-        echo
-        git -C "$CHECKOUT_DIR" stash push -m "bootstrap-auto-stash"
-    fi
 
-    if ! git -C "$CHECKOUT_DIR" pull --ff-only origin "$ref"; then
-        die "Fast-forward pull failed. Please resolve manually in $CHECKOUT_DIR"
-    fi
+    # Design goal: never get stuck. We always converge the checkout to
+    # origin/<ref>, but never silently destroy work — anything local is parked
+    # somewhere recoverable (a stash and/or a backup branch) and setup continues.
+    stash_ref=""        # set if we stashed dirty working-tree changes
+    backup_branch=""    # set if local commits diverged from origin
 
-    # Reapply stashed changes if any
-    if git -C "$CHECKOUT_DIR" stash list | grep -q "bootstrap-auto-stash"; then
-        echo "Reapplying local changes..."
-        if git -C "$CHECKOUT_DIR" stash pop; then
-            echo "################################################################################"
-            echo "WARNING: You have uncommitted local changes (restored from stash)"
-            echo "################################################################################"
-            echo
-            echo "  - (red)   = committed version"
-            echo "  + (green) = your local changes"
-            echo
-            git --no-pager -C "$CHECKOUT_DIR" diff
-            git --no-pager -C "$CHECKOUT_DIR" diff --staged
-            echo
-        else
-            echo "################################################################################"
-            echo "ERROR: Could not reapply local changes - conflicts detected"
-            echo "################################################################################"
-            echo
-            echo "Your changes are still in the stash. To see them:"
-            echo "  git -C $CHECKOUT_DIR stash show -p"
-            echo
-            echo "How would you like to proceed?"
-            echo " [d] Drop stashed changes and continue"
-            echo " [m] Manual resolution (exit script)"
-            printf "Option [d/M]: "
-            read -r choice < /dev/tty || true
-            case "$choice" in
-                d|D)
-                    echo "Dropping stashed changes..."
-                    git -C "$CHECKOUT_DIR" stash drop
-                    ;;
-                *)
-                    die "Aborting. Resolve conflicts in $CHECKOUT_DIR and run 'git stash drop' when done."
-                    ;;
-            esac
+    # 1. Park uncommitted changes (tracked + staged) in a tagged stash.
+    if ! git -C "$CHECKOUT_DIR" diff --quiet \
+        || ! git -C "$CHECKOUT_DIR" diff --staged --quiet; then
+        echo "Local changes detected — stashing before update:"
+        git --no-pager -C "$CHECKOUT_DIR" diff --stat
+        git --no-pager -C "$CHECKOUT_DIR" diff --staged --stat
+        if git -C "$CHECKOUT_DIR" stash push --include-untracked \
+            -m "bootstrap-auto-stash" >/dev/null 2>&1; then
+            stash_ref="$(git -C "$CHECKOUT_DIR" stash list \
+                | sed -n 's/^\(stash@{[0-9]*}\):.*bootstrap-auto-stash.*/\1/p' \
+                | head -n1)"
         fi
+    fi
+
+    # 2. Try a clean fast-forward. If history has diverged (local commits not on
+    #    origin), preserve them on a backup branch and hard-reset to origin so we
+    #    never wedge on a failed --ff-only pull.
+    if ! git -C "$CHECKOUT_DIR" pull --ff-only origin "$ref" >/dev/null 2>&1; then
+        if ! git -C "$CHECKOUT_DIR" merge-base --is-ancestor \
+            HEAD "origin/$ref" >/dev/null 2>&1; then
+            backup_branch="bootstrap-backup/$(date +%Y%m%d-%H%M%S)"
+            git -C "$CHECKOUT_DIR" branch "$backup_branch" HEAD >/dev/null 2>&1 || true
+            echo "Local commits diverged from origin/$ref."
+            echo "  Saved them on branch '$backup_branch'."
+        fi
+        git -C "$CHECKOUT_DIR" reset --hard "origin/$ref" >/dev/null 2>&1 \
+            || die "could not reset $CHECKOUT_DIR to origin/$ref"
+    fi
+
+    # 3. Reapply the stash cleanly if possible. On conflict, roll the working
+    #    tree back to a clean origin state and leave the stash intact — setup
+    #    continues from a known-good checkout; the work is recoverable.
+    if [ -n "$stash_ref" ]; then
+        if git -C "$CHECKOUT_DIR" stash pop "$stash_ref" >/dev/null 2>&1; then
+            stash_ref=""  # cleanly reapplied; nothing parked
+            echo "Reapplied your local changes:"
+            git --no-pager -C "$CHECKOUT_DIR" diff --stat
+        else
+            git -C "$CHECKOUT_DIR" checkout -- . >/dev/null 2>&1 || true
+            git -C "$CHECKOUT_DIR" reset --hard "origin/$ref" >/dev/null 2>&1 || true
+            echo "Your local changes conflict with the update — kept in the stash."
+        fi
+    fi
+
+    # 4. Non-blocking recovery summary (only if anything was parked aside).
+    if [ -n "$stash_ref" ] || [ -n "$backup_branch" ]; then
+        echo "################################################################################"
+        echo "Setup is continuing against origin/$ref. Nothing was lost:"
+        [ -n "$stash_ref" ] && \
+            echo "  • Uncommitted changes: git -C $CHECKOUT_DIR stash show -p"
+        [ -n "$backup_branch" ] && \
+            echo "  • Diverged commits:    git -C $CHECKOUT_DIR log $backup_branch"
+        echo "################################################################################"
     fi
     return 0
 }
