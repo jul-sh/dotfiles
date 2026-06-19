@@ -65,6 +65,14 @@ if [ -d "$HOME/.nix-profile/bin" ]; then
   export PATH="$HOME/.nix-profile/bin:$PATH"
 fi
 
+# Use fresh as the default terminal editor where tools honor $EDITOR/$VISUAL
+# (git's core.editor is set separately in .gitconfig). Fall back gracefully
+# if fresh isn't on PATH yet (e.g. before the Nix profile is built).
+if command -v fresh >/dev/null 2>&1; then
+  export EDITOR="fresh"
+  export VISUAL="fresh"
+fi
+
 # Source .ENV (case invariant) if it exists
 if command -v find >/dev/null 2>&1; then
     _env_file=$(find "$HOME" -maxdepth 1 -iname ".env" -type f | head -n 1)
