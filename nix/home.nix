@@ -20,17 +20,19 @@ let
 
   recursive-charon = pkgs.stdenvNoCC.mkDerivation rec {
     pname = "recursive-charon";
-    version = "build-782fabd"; # recursive-charon
+    version = "build-8034192"; # recursive-charon
+    # Static_TTF (not Static_OTF): only the TrueType fonts are extended with
+    # Iosevka Charon glyph coverage, since Iosevka Charon ships TrueType only.
     src = pkgs.fetchurl {
-      url = "https://github.com/jul-sh/recursive-charon/releases/download/${version}/Static_OTF.zip";
-      sha256 = "a6a16c1a522ed4e8bec1d4de7847c26172dde5a62126130f1e2b9f13a16f4a8a"; # recursive-charon
+      url = "https://github.com/jul-sh/recursive-charon/releases/download/${version}/Static_TTF.zip";
+      sha256 = "60c65a7ae0ce530e1cd08e7564b158bb29c9f01258591409e62d5dcbd600e09b"; # recursive-charon
     };
     nativeBuildInputs = [ pkgs.unzip ];
     sourceRoot = ".";
     dontFixup = true;
     installPhase = ''
-      mkdir -p $out/share/fonts/opentype
-      find . -name '*.otf' -exec cp {} $out/share/fonts/opentype/ \;
+      mkdir -p $out/share/fonts/truetype
+      find . -name '*.ttf' -exec cp {} $out/share/fonts/truetype/ \;
     '';
   };
 in
@@ -75,7 +77,7 @@ in
       recursive = true;
     };
     "Library/Fonts/recursive-charon" = {
-      source = "${recursive-charon}/share/fonts/opentype";
+      source = "${recursive-charon}/share/fonts/truetype";
       recursive = true;
     };
   };
