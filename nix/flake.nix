@@ -3,12 +3,12 @@
 
   inputs = {
     # Nix Packages collection (stick to the latest stable release for better cache hits)
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
 
     # Home Manager for managing user environments
     home-manager = {
       # Track the matching Home Manager release to avoid rebuilding Nix from source
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -25,7 +25,7 @@
       flake = false; # This is just source code, not a flake
     };
 
-    fresh.url = "github:sinelaw/fresh/v0.4.1";
+    fresh.url = "github:sinelaw/fresh/v0.4.3";
 
     # Pinned nixpkgs for atuin 18.12.1 (fixes macOS Tahoe/zsh crash)
     nixpkgs-atuin.url = "github:nixos/nixpkgs/66e918c518991dc4275d94b8e1d87a7d46d67201";

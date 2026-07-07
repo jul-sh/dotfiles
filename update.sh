@@ -44,7 +44,7 @@ update_recursive_charon() {
     # Get the first release (latest, including prereleases)
     local version url sha256
     version=$(jq -r '.[0].tag_name' "$tmp_json")
-    url=$(jq -r '.[0].assets[] | select(.name == "Static_OTF.zip") | .browser_download_url' "$tmp_json")
+    url=$(jq -r '.[0].assets[] | select(.name == "Static_TTF.zip") | .browser_download_url' "$tmp_json")
     rm "$tmp_json"
 
     echo "  Fetching hash for $version..."
