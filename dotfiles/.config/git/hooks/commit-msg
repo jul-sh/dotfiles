@@ -8,7 +8,7 @@ MSG_FILE="$1"
 # have to remove it here.
 sed -i '' \
     -e '/^🤖 Generated with \[Claude Code\]/d' \
-    -e '/^Co-Authored-By: Claude .* <noreply@anthropic.com>$/d' \
+    -e '/^Co-Authored-By: Claude.* <noreply@anthropic.com>$/d' \
     "$MSG_FILE"
 
 # Remove trailing blank lines

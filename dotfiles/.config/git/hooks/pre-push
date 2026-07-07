@@ -1,0 +1,15 @@
+#!/bin/sh
+# Global pre-push: run git-lfs, then chain to the repo-local hook, which
+# core.hooksPath would otherwise shadow. Both consume the refs list on
+# stdin, so capture it once and replay it.
+set -eu
+
+refs=$(cat)
+
+command -v git-lfs >/dev/null 2>&1 || { printf >&2 "\n%s\n\n" "This repository is configured for Git LFS but 'git-lfs' was not found on your path. If you no longer wish to use Git LFS, remove this hook by deleting the 'pre-push' file in the hooks directory (set by 'core.hookspath'; usually '.git/hooks')."; exit 2; }
+printf '%s\n' "$refs" | git-lfs pre-push "$@"
+
+hook="$(git rev-parse --git-dir)/hooks/pre-push"
+if [ -x "$hook" ]; then
+    printf '%s\n' "$refs" | "$hook" "$@"
+fi
