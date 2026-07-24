@@ -2,23 +2,30 @@
 # macos/setup.sh - macOS-only setup steps invoked by nix/setup-internal.sh
 
 set -euo pipefail
-# hi
-# Ensure we are in the repo root
-cd "$(dirname "$0")/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 die() { echo "error: $1" >&2; exit 1; }
 
 SCOPE_FILE=".setup_scope"
 
 resolve_setup_scope() {
+    local scope
     if [[ -n "${SETUP_SCOPE:-}" ]]; then
-        # Explicit env var: use it and persist
-        echo "$SETUP_SCOPE" > "$SCOPE_FILE"
+        scope="$SETUP_SCOPE"
     elif [[ -f "$SCOPE_FILE" ]]; then
-        SETUP_SCOPE=$(<"$SCOPE_FILE")
+        scope=$(<"$SCOPE_FILE")
     else
-        SETUP_SCOPE=system
-        echo "$SETUP_SCOPE" > "$SCOPE_FILE"
+        scope=system
+    fi
+
+    case "$scope" in
+        user|system) ;;
+        *) die "SETUP_SCOPE must be 'user' or 'system', got '$scope'" ;;
+    esac
+
+    SETUP_SCOPE="$scope"
+    if [[ ! -f "$SCOPE_FILE" ]] || [[ "$(<"$SCOPE_FILE")" != "$scope" ]]; then
+        printf '%s\n' "$scope" > "$SCOPE_FILE"
     fi
     echo "Setup scope: $SETUP_SCOPE"
 }
@@ -43,33 +50,8 @@ install_desktop_apps() {
     echo "Installing desktop apps..."
     ensure_homebrew
     local casks=("wezterm" "zed" "jul-sh/clipkitty/clipkitty" "home-assistant")
-    for cask in "${casks[@]}"; do
-        local base_name="${cask##*/}"
-        # Check if installed
-        if ! brew list --cask | grep -q "^${base_name}$"; then
-            echo "Installing $cask..."
-            brew install --cask "$cask" || echo "  warning: failed to install $cask"
-        else
-            # Check if outdated
-            if brew outdated --cask --quiet "$cask" >/dev/null 2>&1; then
-                if pgrep -ix "$base_name" >/dev/null; then
-                    echo "  $base_name is currently running. Scheduling update for when it closes..."
-                    (
-                        while pgrep -ix "$base_name" >/dev/null; do
-                            sleep 60
-                        done
-                        echo "  $base_name closed. Starting Homebrew update..."
-                        brew upgrade --cask "$cask" || echo "  warning: failed to update $cask"
-                    ) & disown
-                else
-                    echo "Updating $base_name..."
-                    brew upgrade --cask "$cask" || echo "  warning: failed to update $cask"
-                fi
-            else
-                echo "  $base_name is up to date."
-            fi
-        fi
-    done
+    brew install --cask "${casks[@]}" || echo "  warning: one or more apps failed to install"
+    brew upgrade --cask "${casks[@]}" || echo "  warning: one or more apps failed to update"
 }
 
 configure_default_apps() {
@@ -182,34 +164,45 @@ build_spotlight_scripts() {
     fi
 }
 
-install_capslock_remap() {
-    local swift_src="./macos/capslock_remap.swift"
+compile_capslock_remap() {
+    local scope="$1" bin_dst="$2" swift_src="./macos/capslock_remap.swift"
+    [[ "$swift_src" -nt "$bin_dst" ]] || [[ ! -f "$bin_dst" ]] || return 0
+    command -v swiftc &>/dev/null || { echo "  warning: swiftc not found, skipping capslock remap"; return 1; }
+
+    echo "Compiling capslock remap..."
+    local tmp_bin
+    tmp_bin=$(mktemp)
+    if ! swiftc -O "$swift_src" -o "$tmp_bin"; then
+        rm -f "$tmp_bin"
+        echo "  warning: swiftc compilation failed, skipping capslock remap"
+        return 1
+    fi
+
+    case "$scope" in
+        user)
+            if ! install -m 755 "$tmp_bin" "$bin_dst"; then
+                rm -f "$tmp_bin"
+                echo "  warning: could not install capslock remap"
+                return 1
+            fi
+            ;;
+        system)
+            if ! sudo install -d /Library/Scripts || ! sudo install -m 755 "$tmp_bin" "$bin_dst"; then
+                rm -f "$tmp_bin"
+                echo "  warning: could not install capslock remap"
+                return 1
+            fi
+            ;;
+    esac
+    rm -f "$tmp_bin"
+}
+
+install_capslock_remap_user() {
     local bin_dst="$HOME/.local/bin/capslock-remap"
     local plist_dst="$HOME/Library/LaunchAgents/com.julsh.capslock_remap.plist"
-    local label="com.julsh.capslock_remap"
 
     mkdir -p "$HOME/.local/bin" "$HOME/Library/LaunchAgents"
-
-    # Compile if source is newer or binary missing
-    if [[ "$swift_src" -nt "$bin_dst" ]] || [[ ! -f "$bin_dst" ]]; then
-        echo "Compiling capslock remap agent..."
-        if ! command -v swiftc &>/dev/null; then
-            echo "  warning: swiftc not found, skipping capslock remap"
-            return
-        fi
-        if ! swiftc -O "$swift_src" -o "$bin_dst"; then
-            echo "  warning: swiftc compilation failed, skipping capslock remap"
-            return
-        fi
-    fi
-
-    # Clean up old one-shot agent if present
-    local old_agent="$HOME/Library/LaunchAgents/com.capslock_to_backspace.plist"
-    if [[ -f "$old_agent" ]]; then
-        launchctl unload "$old_agent" 2>/dev/null || true
-        rm -f "$old_agent"
-        rm -f "$HOME/.local/bin/capslock_to_backspace.sh"
-    fi
+    compile_capslock_remap user "$bin_dst" || return 0
 
     # Generate plist
     local plist_content
@@ -219,7 +212,7 @@ install_capslock_remap() {
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>${label}</string>
+    <string>com.julsh.capslock_remap</string>
     <key>Program</key>
     <string>${bin_dst}</string>
     <key>RunAtLoad</key>
@@ -241,38 +234,9 @@ PLISTEOF
 }
 
 install_capslock_remap_system() {
-    local swift_src="./macos/capslock_remap.swift"
     local bin_dst="/Library/Scripts/capslock-remap"
     local plist_dst="/Library/LaunchDaemons/com.julsh.capslock_remap.plist"
-    local label="com.julsh.capslock_remap"
-
-    # Compile to temp then install with sudo
-    local tmp_bin
-    tmp_bin=$(mktemp)
-    if [[ "$swift_src" -nt "$bin_dst" ]] || [[ ! -f "$bin_dst" ]]; then
-        echo "Compiling capslock remap daemon..."
-        if ! command -v swiftc &>/dev/null; then
-            echo "  warning: swiftc not found, skipping capslock remap"
-            rm -f "$tmp_bin"
-            return
-        fi
-        if ! swiftc -O "$swift_src" -o "$tmp_bin"; then
-            echo "  warning: swiftc compilation failed, skipping capslock remap"
-            rm -f "$tmp_bin"
-            return
-        fi
-        sudo cp "$tmp_bin" "$bin_dst"
-        sudo chmod +x "$bin_dst"
-        rm -f "$tmp_bin"
-    fi
-
-    # Clean up old shell-script daemon if present
-    local old_daemon="/Library/LaunchDaemons/com.capslock_to_backspace.plist"
-    if [[ -f "$old_daemon" ]]; then
-        sudo launchctl unload "$old_daemon" 2>/dev/null || true
-        sudo rm -f "$old_daemon"
-        sudo rm -f /Library/Scripts/capslock_to_backspace.sh
-    fi
+    compile_capslock_remap system "$bin_dst" || return 0
 
     # Generate plist
     local plist_content
@@ -282,7 +246,7 @@ install_capslock_remap_system() {
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>${label}</string>
+    <string>com.julsh.capslock_remap</string>
     <key>ProgramArguments</key>
     <array>
         <string>${bin_dst}</string>
@@ -306,64 +270,42 @@ PLISTEOF
     sudo launchctl load -w "$plist_dst" 2>/dev/null || true
 }
 
-install_launchagent() {
-    local script_src="$1" plist_src="$2"
-    local script_name plist_name script_dst plist_dst
+install_launchd_job() {
+    local scope="$1" script_src="$2" plist_src="$3"
+    local script_name plist_name script_dst plist_dst plist_content
     script_name=$(basename "$script_src")
     plist_name=$(basename "$plist_src")
-    script_dst="$HOME/.local/bin/$script_name"
-    plist_dst="$HOME/Library/LaunchAgents/$plist_name"
 
-    mkdir -p "$HOME/.local/bin" "$HOME/Library/LaunchAgents"
-
-    local transformed_plist
-    transformed_plist=$(sed "s|/Library/Scripts|$HOME/.local/bin|g" "$plist_src")
-
-    local files_changed=false
-    if ! cmp -s "$script_src" "$script_dst" || [[ "$transformed_plist" != "$(cat "$plist_dst" 2>/dev/null)" ]]; then
-        files_changed=true
-    fi
-
-    if $files_changed; then
-        echo "Installing ${plist_name}..."
-        launchctl unload "$plist_dst" 2>/dev/null || true
-        cp "$script_src" "$script_dst"
-        chmod +x "$script_dst"
-        echo "$transformed_plist" > "$plist_dst"
-    fi
-
-    launchctl load -w "$plist_dst" 2>/dev/null || true
-}
-
-install_launchdaemon() {
-    local script_src="$1" script_dst="$2" plist_src="$3" plist_dst="$4"
-    local plist_name
-    plist_name=$(basename "$plist_dst")
-
-    local files_changed=false
-    if ! cmp -s "$script_src" "$script_dst" || ! cmp -s "$plist_src" "$plist_dst"; then
-        files_changed=true
-    fi
-
-    if $files_changed; then
-        echo "Installing ${plist_name}..."
-        # Unload first if updating
-        sudo launchctl unload "$plist_dst" 2>/dev/null || true
-        sudo cp "$script_src" "$script_dst"
-        sudo chmod +x "$script_dst"
-        sudo cp "$plist_src" "$plist_dst"
-    fi
-
-    # Always ensure daemon is loaded (idempotent - fails silently if already loaded)
-    sudo launchctl load -w "$plist_dst" 2>/dev/null || true
+    case "$scope" in
+        user)
+            script_dst="$HOME/.local/bin/$script_name"
+            plist_dst="$HOME/Library/LaunchAgents/$plist_name"
+            plist_content=$(sed "s|/Library/Scripts|$HOME/.local/bin|g" "$plist_src")
+            mkdir -p "$HOME/.local/bin" "$HOME/Library/LaunchAgents"
+            if ! cmp -s "$script_src" "$script_dst" || [[ "$plist_content" != "$(cat "$plist_dst" 2>/dev/null)" ]]; then
+                echo "Installing $plist_name..."
+                launchctl unload "$plist_dst" 2>/dev/null || true
+                install -m 755 "$script_src" "$script_dst"
+                printf '%s\n' "$plist_content" > "$plist_dst"
+            fi
+            launchctl load -w "$plist_dst" 2>/dev/null || true
+            ;;
+        system)
+            script_dst="/Library/Scripts/$script_name"
+            plist_dst="/Library/LaunchDaemons/$plist_name"
+            sudo install -d /Library/Scripts /Library/LaunchDaemons
+            if ! cmp -s "$script_src" "$script_dst" || ! cmp -s "$plist_src" "$plist_dst"; then
+                echo "Installing $plist_name..."
+                sudo launchctl unload "$plist_dst" 2>/dev/null || true
+                sudo install -m 755 "$script_src" "$script_dst"
+                sudo install -m 644 "$plist_src" "$plist_dst"
+            fi
+            sudo launchctl load -w "$plist_dst" 2>/dev/null || true
+            ;;
+    esac
 }
 
 configure_user_defaults() {
-    if [[ "$SETUP_SCOPE" == "user" ]]; then
-        install_capslock_remap
-        install_launchagent ./macos/sleep_on_lid_close.sh ./macos/com.julsh.sleeponlidclose.plist
-    fi
-
     # Bind Shift+Cmd+V to "Paste and Match Style" (paste without formatting) globally.
     # @=Cmd, $=Shift, ~=Option; @$v = Shift+Cmd+V
     # First clear any stale overrides from when Cmd+V was swapped to match-style,
@@ -446,40 +388,47 @@ EOF
 }
 
 configure_system_defaults() {
-    local capslock_agent="$HOME/Library/LaunchAgents/com.capslock_to_backspace.plist"
-    local capslock_remap_agent="$HOME/Library/LaunchAgents/com.julsh.capslock_remap.plist"
-    local sleep_agent="$HOME/Library/LaunchAgents/com.julsh.sleeponlidclose.plist"
-
-    # Enable Touch ID for sudo authentication
     configure_touch_id_sudo
+    install_capslock_remap_system
+    install_launchd_job system ./macos/sleep_on_lid_close.sh ./macos/com.julsh.sleeponlidclose.plist
 
-    if [[ "$SETUP_SCOPE" == "system" ]]; then
-        # Install capslock remap as LaunchDaemon (all users, oneshot)
-        install_capslock_remap_system
-        install_launchdaemon \
-            ./macos/sleep_on_lid_close.sh /Library/Scripts/sleep_on_lid_close.sh \
-            ./macos/com.julsh.sleeponlidclose.plist /Library/LaunchDaemons/com.julsh.sleeponlidclose.plist
-        # Clean up per-user LaunchAgents if present
-        for agent in "$capslock_agent" "$capslock_remap_agent" "$sleep_agent"; do
-            if [[ -f "$agent" ]]; then
-                launchctl unload "$agent" 2>/dev/null || true
-                rm -f "$agent"
-            fi
-        done
-        rm -f "$HOME/.local/bin/capslock_to_backspace.sh" "$HOME/.local/bin/capslock-remap" "$HOME/.local/bin/sleep_on_lid_close.sh"
-    else
-        # Clean up system-wide LaunchDaemons if present
-        for daemon in com.capslock_to_backspace.plist com.julsh.capslock_remap.plist com.julsh.sleeponlidclose.plist; do
-            if [[ -f "/Library/LaunchDaemons/$daemon" ]]; then
-                sudo launchctl unload "/Library/LaunchDaemons/$daemon" 2>/dev/null || true
-                sudo rm -f "/Library/LaunchDaemons/$daemon"
-            fi
-        done
-        sudo rm -f /Library/Scripts/capslock_to_backspace.sh /Library/Scripts/capslock-remap /Library/Scripts/sleep_on_lid_close.sh
-    fi
+    local agent
+    for agent in com.julsh.capslock_remap.plist com.julsh.sleeponlidclose.plist; do
+        agent="$HOME/Library/LaunchAgents/$agent"
+        launchctl unload "$agent" 2>/dev/null || true
+        rm -f "$agent"
+    done
+    rm -f "$HOME/.local/bin/capslock-remap" "$HOME/.local/bin/sleep_on_lid_close.sh"
 
     sudo defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText \
         "—ฅ/ᐠ. ̫.ᐟ\\\ฅ— if it is lost, pls return this computer to lost@jul.sh"
+}
+
+configure_selected_scope() {
+    case "$SETUP_SCOPE" in
+        user)
+            install_capslock_remap_user
+            install_launchd_job user ./macos/sleep_on_lid_close.sh ./macos/com.julsh.sleeponlidclose.plist
+            echo "Skipping system configuration (SETUP_SCOPE=user)"
+            ;;
+        system)
+            echo "################################################################################"
+            echo "System configuration requires sudo."
+            echo "To skip, re-run with: SETUP_SCOPE=user curl c.jul.sh | sh"
+            echo "################################################################################"
+            if sudo -v; then
+                configure_system_defaults
+            else
+                local choice
+                printf "Skip system configuration and continue? [y/N]: "
+                read -r choice < /dev/tty || choice=""
+                case "$choice" in
+                    y|Y) echo "Skipping system configuration." ;;
+                    *) die "Setup aborted" ;;
+                esac
+            fi
+            ;;
+    esac
 }
 
 main() {
@@ -498,25 +447,9 @@ main() {
     build_spotlight_scripts
     echo "Configuring user defaults..."
     configure_user_defaults
-    if [[ "$SETUP_SCOPE" == "user" ]]; then
-        echo "Skipping system configuration (SETUP_SCOPE=user)"
-    else
-        echo "################################################################################"
-        echo "System configuration requires sudo."
-        echo "To skip, re-run with: SETUP_SCOPE=user curl c.jul.sh | sh"
-        echo "################################################################################"
-        if sudo -v; then
-            configure_system_defaults
-        else
-            echo ""
-            printf "Skip system configuration and continue? [y/N]: "
-            read -r choice < /dev/tty || choice=""
-            case "$choice" in
-                y|Y) echo "Skipping system configuration." ;;
-                *) die "Setup aborted" ;;
-            esac
-        fi
-    fi
+    configure_selected_scope
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main "$@"
+fi

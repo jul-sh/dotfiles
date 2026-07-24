@@ -2,7 +2,9 @@
 .aider*
 .env
 dotfiles/.bashrc
+dotfiles/.bash_profile
 dotfiles/.profile
+dotfiles/.zprofile
 dotfiles/.zshrc
 nix/hosts/local/
 

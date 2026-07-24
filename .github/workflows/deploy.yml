@@ -16,7 +16,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install test shell
+        run: sudo apt-get update && sudo apt-get install -y zsh
+      - name: Smoke tests
+        run: bash tests/smoke.sh
+
   deploy:
+    needs: test
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

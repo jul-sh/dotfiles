@@ -3,8 +3,7 @@
 
 set -euo pipefail
 
-# Ensure we are in the repo root
-cd "$(dirname "$0")/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 # --- Helpers ---
 die() { echo "error: $1" >&2; exit 1; }
@@ -79,76 +78,47 @@ install_cargo_tools() {
 
 setup_local_rc_files() {
     local pairs=".profile:.profile.shared .bash_profile:.profile.shared .bashrc:.bashrc.shared .zprofile:.profile.shared .zshrc:.zshrc.shared"
+    local marker="# >>> jul-sh/dotfiles managed block >>>"
+    local end_marker="# <<< jul-sh/dotfiles managed block <<<"
 
     for pair in $pairs; do
         local rc="${pair%%:*}"
         local shared="${pair#*:}"
         local target="${HOME}/${rc}"
-        local marker="# >>> jul-sh/dotfiles managed block >>>"
-        local end_marker="# <<< jul-sh/dotfiles managed block <<<"
-
         local inject_logic="[ -f \"\${HOME}/${shared}\" ] && . \"\${HOME}/${shared}\""
 
-        if [[ -f "$target" ]]; then
-            if ! grep -q "$marker" "$target"; then
-                echo "Updating ${rc}..."
-                local tmpfile=$(mktemp)
-                cat >> "$tmpfile" <<EOF
-$marker
-$inject_logic
-$end_marker
-
-EOF
-                cat "$target" >> "$tmpfile"
-                mv "$tmpfile" "$target"
-            fi
-        else
-            echo "Creating ${rc}..."
-            cat > "$target" <<EOF
-$marker
-$inject_logic
-$end_marker
-
-# Machine-specific configuration below
-
-EOF
+        if [[ -L "$target" ]] && [[ "$(readlink "$target")" == "$(pwd)/dotfiles/$rc" ]]; then
+            local materialized
+            materialized=$(mktemp)
+            cp -L "$target" "$materialized"
+            rm -f "$target"
+            mv "$materialized" "$target"
         fi
+
+        [[ -f "$target" ]] && grep -qF "$marker" "$target" && continue
+        [[ -f "$target" ]] && echo "Updating ${rc}..." || echo "Creating ${rc}..."
+
+        local tmpfile
+        tmpfile=$(mktemp)
+        printf '%s\n%s\n%s\n\n' "$marker" "$inject_logic" "$end_marker" > "$tmpfile"
+        if [[ -f "$target" ]]; then
+            cat "$target" >> "$tmpfile"
+        else
+            printf '%s\n\n' '# Machine-specific configuration below' >> "$tmpfile"
+        fi
+        mv "$tmpfile" "$target"
     done
 }
 
 symlink_dotfiles() {
     echo "Symlinking dotfiles..."
-    local src_dir="./dotfiles"
-    local repo_dir
+    local src_dir="dotfiles" repo_dir
     repo_dir=$(pwd)
 
-    # Remove old Nix store symlinks that would redirect writes to source
-    # Find all directories in dotfiles/ and check if corresponding $HOME path is a symlink to Nix store
-    echo "  Cleaning up old Nix symlinks..."
-    find "$src_dir" -type d | while read -r dir; do
-        local rel="${dir#$src_dir/}"
-        [[ -z "$rel" ]] && continue
-        local home_path="$HOME/$rel"
-        if [[ -L "$home_path" ]] && readlink "$home_path" | grep -q "^/nix/store"; then
-            rm -f "$home_path"
-        fi
-    done
-
-    # Restore any corrupted source files (symlinks in dotfiles/)
-    local corrupted
-    corrupted=$(find "$src_dir" -type l 2>/dev/null || true)
-    if [[ -n "$corrupted" ]]; then
-        echo "  Restoring corrupted source files..."
-        while IFS= read -r f; do
-            rm -f "$f"
-            git checkout HEAD -- "${f#./}" 2>/dev/null || true
-        done <<< "$corrupted"
-    fi
-
-    find "$src_dir" -type f ! -name "*.backup" ! -name ".DS_Store" | while read -r src; do
+    git ls-files -z -- "$src_dir" | while IFS= read -r -d '' src; do
         local rel="${src#$src_dir/}"
         local dst="$HOME/$rel"
-        local target="${repo_dir}/dotfiles/${rel}"
+        local target="$repo_dir/$src"
 
         # Skip if already correctly symlinked
         if [[ -L "$dst" ]] && [[ "$(readlink "$dst")" == "$target" ]]; then
@@ -166,11 +136,27 @@ install_git_hooks() {
     echo "Installing git hooks..."
     mkdir -p .git/hooks
     ln -sf ../../hooks/pre-push .git/hooks/pre-push
+
+    command -v git-lfs &>/dev/null || return 0
+    git lfs install --skip-smudge >/dev/null 2>&1
+    local git_lfs_path hooks_dir hook
+    git_lfs_path=$(command -v git-lfs)
+    hooks_dir=$(git config --global core.hooksPath 2>/dev/null || true)
+    [[ -d "$hooks_dir" ]] || return 0
+    for hook in "$hooks_dir"/{post-checkout,post-commit,post-merge,pre-push}; do
+        if [[ -f "$hook" ]]; then
+            sed -i.bak "s|command -v git-lfs|command -v $git_lfs_path|g; s|git lfs |$git_lfs_path |g" "$hook"
+            rm -f "$hook.bak"
+        fi
+    done
 }
 
 install_nix_custom_conf() {
     local src="./nix/nix.custom.conf"
     local dst="/etc/nix/nix.custom.conf"
+    local scope="${SETUP_SCOPE:-}"
+    [[ -n "$scope" ]] || [[ ! -f .setup_scope ]] || scope=$(<.setup_scope)
+    [[ "${scope:-system}" == system ]] || return 0
     if [[ -f "$src" ]] && ! diff -q "$src" "$dst" &>/dev/null; then
         echo "Installing nix.custom.conf..."
         sudo mkdir -p "$(dirname "$dst")"
@@ -196,4 +182,6 @@ run_setup() {
     echo "✓ Setup complete. Please restart your terminal for changes to take effect."
 }
 
-run_setup
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    run_setup
+fi
