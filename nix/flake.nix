@@ -51,15 +51,13 @@
       # Helper function to generate attribute sets for all systems
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
 
-      # Helper function to create a Home Manager configuration for a given system and user
-      # homeDirectory is set via local-host input (overridden by setup.sh at runtime)
-      mkHomeConfiguration = system: username:
+      # The local-host input replaces these user defaults during setup.
+      mkHomeConfiguration = system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          # Fallback home directory (used when local-host doesn't override)
           defaultHome = if nixpkgs.lib.hasSuffix "-darwin" system
-            then "/Users/${username}"
-            else "/home/${username}";
+            then "/Users/julsh"
+            else "/home/julsh";
         in
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
@@ -69,31 +67,15 @@
               ./home.nix
               inputs.local-host.homeModules.default  # Machine-specific overrides
               {
-                home.username = username;
+                home.username = nixpkgs.lib.mkDefault "julsh";
                 home.homeDirectory = nixpkgs.lib.mkDefault defaultHome;
               }
             ];
         };
 
-      # List of users to generate configurations for
-      users = [ "julsh" ];
-
-      # Generate all user@system combinations
-      userConfigurations = builtins.listToAttrs (
-        nixpkgs.lib.flatten (
-          map (user:
-            map (system: {
-              name = "${user}@${system}";
-              value = mkHomeConfiguration system user;
-            }) supportedSystems
-          ) users
-        )
-      );
-
     in
     {
-      # Expose the generated configurations to home-manager.
-      homeConfigurations = userConfigurations;
+      homeConfigurations = forAllSystems mkHomeConfiguration;
 
       # Dev shell with tools needed for setup scripts
       devShells = forAllSystems (system:

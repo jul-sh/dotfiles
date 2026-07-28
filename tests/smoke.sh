@@ -114,6 +114,20 @@ test_tracked_dotfile_linking_and_local_rcs() {
     assert_contains "$home/.zprofile" '# >>> jul-sh/dotfiles managed block >>>'
 }
 
+test_local_host_uses_runtime_user() {
+    local fixture="$TEST_ROOT/local-host" home="$TEST_ROOT/arbitrary-home"
+    mkdir -p "$fixture/nix/hosts" "$home"
+
+    USER=arbitrary HOME="$home" bash -c '
+        source "$1"
+        cd "$2"
+        ensure_local_host_flake
+    ' _ "$REPO_ROOT/nix/setup-internal.sh" "$fixture"
+
+    assert_contains "$fixture/nix/hosts/local/flake.nix" 'home.username = lib.mkForce "arbitrary";'
+    assert_contains "$fixture/nix/hosts/local/flake.nix" "home.homeDirectory = lib.mkForce \"$home\";"
+}
+
 test_persisted_user_scope_skips_system_nix_config() {
     local fixture="$TEST_ROOT/user-nix-config" output
     mkdir -p "$fixture/nix"
@@ -187,6 +201,7 @@ tests=(
     test_bootstrap_dirty_update
     test_bootstrap_diverged_update
     test_tracked_dotfile_linking_and_local_rcs
+    test_local_host_uses_runtime_user
     test_persisted_user_scope_skips_system_nix_config
     test_setup_scope_dispatch
     test_ai_modes
