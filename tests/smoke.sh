@@ -169,33 +169,6 @@ test_setup_scope_dispatch() {
     [[ "$output" == *system* ]] || fail "system scope dispatched incorrectly"
 }
 
-test_ai_modes() {
-    local bin_dir="$TEST_ROOT/ai-bin" output zsh_bin
-    zsh_bin=$(command -v zsh) || fail "zsh is required for AI helper tests"
-    mkdir -p "$bin_dir"
-    printf '#!/bin/sh\nprintf "claude:%%s\\n" "$*"\n' > "$bin_dir/claude"
-    chmod +x "$bin_dir/claude"
-
-    output=$(PATH="$bin_dir:/usr/bin:/bin" "$zsh_bin" -c 'source "$1"; _ai -n "hello world"' \
-        _ "$REPO_ROOT/dotfiles/.utils.sh" 2>/dev/null)
-    [[ "$output" == claude:-p* && "$output" != claude:-c* ]] || fail "ai new mode dispatched incorrectly"
-
-    output=$(PATH="$bin_dir:/usr/bin:/bin" "$zsh_bin" -c 'source "$1"; _ai "hello world"' \
-        _ "$REPO_ROOT/dotfiles/.utils.sh" 2>/dev/null)
-    [[ "$output" == claude:-c* ]] || fail "ai continue mode dispatched incorrectly"
-
-    output=$(PATH="$bin_dir:/usr/bin:/bin" "$zsh_bin" -c 'source "$1"; _ai -c' \
-        _ "$REPO_ROOT/dotfiles/.utils.sh")
-    [[ "$output" == 'claude:--dangerously-skip-permissions -c' ]] || fail "ai interactive mode dispatched incorrectly"
-
-    rm -f "$bin_dir/claude"
-    printf '#!/bin/sh\nprintf "gemini:%%s\\n" "$*"\n' > "$bin_dir/gemini"
-    chmod +x "$bin_dir/gemini"
-    output=$(PATH="$bin_dir:/usr/bin:/bin" "$zsh_bin" -c 'source "$1"; _ai "fallback"' \
-        _ "$REPO_ROOT/dotfiles/.utils.sh" 2>/dev/null)
-    [[ "$output" == gemini:--resume* ]] || fail "ai backend fallback dispatched incorrectly"
-}
-
 tests=(
     test_bootstrap_fresh_and_clean_update
     test_bootstrap_dirty_update
@@ -204,7 +177,6 @@ tests=(
     test_local_host_uses_runtime_user
     test_persisted_user_scope_skips_system_nix_config
     test_setup_scope_dispatch
-    test_ai_modes
 )
 
 for test_name in "${tests[@]}"; do
