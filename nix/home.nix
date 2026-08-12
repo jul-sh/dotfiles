@@ -35,6 +35,36 @@ let
       find . -name '*.ttf' -exec cp {} $out/share/fonts/truetype/ \;
     '';
   };
+
+  # The 0ca2372 source revision is Keytap 8.0.0, but its flake still names an
+  # unpublished v7 asset. Override that stale release metadata until the next
+  # tagged release while retaining the revision's package definition.
+  keytapRelease = {
+    aarch64-darwin = {
+      url = "https://github.com/jul-sh/keytap/releases/download/0ca2372/keytap-0ca2372-arm64.zip";
+      hash = "sha256-PKtTkm10J4AuEKx2xUUs5/RnG68UtBKKON8hd33Y3eU=";
+    };
+    x86_64-linux = {
+      url = "https://github.com/jul-sh/keytap/releases/download/0ca2372/keytap-0ca2372-linux-x86_64.zip";
+      hash = "sha256-Bl69cQnlTdFiQFte1kJaA6MUjGg4XMjhsuZIzW5gcyE=";
+    };
+  }.${pkgs.system} or null;
+
+  keytapPackage =
+    if keytapRelease == null then null else
+    inputs.keytap.packages.${pkgs.system}.default.overrideAttrs (old: {
+      version = "8.0.0";
+      src = pkgs.fetchurl keytapRelease;
+    } // lib.optionalAttrs pkgs.stdenv.isDarwin {
+      nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.makeWrapper ];
+      installPhase = ''
+        app="$out/share/keytap/Keytap.app"
+        mkdir -p "$out/share/keytap" "$out/bin"
+        cp -R Keytap.app "$out/share/keytap/"
+        makeWrapper "$app/Contents/MacOS/keytap" "$out/bin/keytap" \
+          --run "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f '$app' >/dev/null 2>&1 || true"
+      '';
+    });
 in
 {
   # Standard Home Manager settings
@@ -57,9 +87,14 @@ in
     nodejs
     iosevka-charon
     recursive-charon
-  ] ++ lib.optionals (inputs.keytap.packages ? ${pkgs.system} && inputs.keytap.packages.${pkgs.system} ? default) [
-    inputs.keytap.packages.${pkgs.system}.default
-  ];
+  ] ++ lib.optional (keytapPackage != null) keytapPackage;
+
+  home.activation.registerKeytap = lib.mkIf (pkgs.stdenv.isDarwin && keytapPackage != null) (
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+        -f ${keytapPackage}/share/keytap/Keytap.app >/dev/null
+    ''
+  );
 
   # --- 2. Dotfiles ---
   # Most dotfiles are symlinked by setup-internal.sh (not Nix).
