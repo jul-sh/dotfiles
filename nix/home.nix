@@ -35,6 +35,8 @@ let
       find . -name '*.ttf' -exec cp {} $out/share/fonts/truetype/ \;
     '';
   };
+
+  keytapPackage = inputs.keytap.packages.${pkgs.system}.default or null;
 in
 {
   # Standard Home Manager settings
@@ -57,9 +59,7 @@ in
     nodejs
     iosevka-charon
     recursive-charon
-  ] ++ lib.optionals (inputs.keytap.packages ? ${pkgs.system} && inputs.keytap.packages.${pkgs.system} ? default) [
-    inputs.keytap.packages.${pkgs.system}.default
-  ];
+  ] ++ lib.optional (keytapPackage != null) keytapPackage;
 
   # --- 2. Dotfiles ---
   # Most dotfiles are symlinked by setup-internal.sh (not Nix).
