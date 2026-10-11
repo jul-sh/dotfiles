@@ -48,7 +48,8 @@ let
     dontFixup = true;
     installPhase = ''
       mkdir -p $out/share/fonts/truetype
-      find . -path '*/variable/*.ttf' -exec cp {} $out/share/fonts/truetype/ \;
+      install -m 444 ./*/variable/'Kerberos[wght].ttf' $out/share/fonts/truetype/Kerberos-VF.ttf
+      install -m 444 ./*/variable/'Kerberos-Italic[wght].ttf' $out/share/fonts/truetype/Kerberos-Italic-VF.ttf
     '';
   };
 
@@ -75,8 +76,9 @@ in
     nodejs
     iosevka-charon
     recursive-charon
-    kerberos
-  ] ++ lib.optional (keytapPackage != null) keytapPackage;
+  ]
+  ++ lib.optional (keytapPackage != null) keytapPackage
+  ++ lib.optional pkgs.stdenv.isLinux kerberos;
 
   # --- 2. Dotfiles ---
   # Most dotfiles are symlinked by setup-internal.sh (not Nix).
@@ -97,10 +99,22 @@ in
       source = "${recursive-charon}/share/fonts/truetype";
       recursive = true;
     };
-    "Library/Fonts/kerberos" = {
-      source = "${kerberos}/share/fonts/truetype";
-      recursive = true;
-    };
+  };
+
+  # CoreText does not reliably register fonts symlinked into ~/Library/Fonts.
+  # Copy Kerberos as real files so it is immediately available to macOS apps.
+  home.activation = lib.optionalAttrs pkgs.stdenv.isDarwin {
+    installKerberosFonts = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+      font_dir="${config.home.homeDirectory}/Library/Fonts"
+      mkdir -p "$font_dir"
+      for font in Kerberos-VF.ttf Kerberos-Italic-VF.ttf; do
+        source="${kerberos}/share/fonts/truetype/$font"
+        target="$font_dir/$font"
+        if ! cmp -s "$source" "$target"; then
+          install -m 644 "$source" "$target"
+        fi
+      done
+    '';
   };
 
   # --- 3. Fonts ---
