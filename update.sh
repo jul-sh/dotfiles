@@ -57,10 +57,35 @@ update_recursive_charon() {
     echo "  Updated to $version"
 }
 
+update_kerberos() {
+    echo "Updating Kerberos..."
+    local api_url="https://api.github.com/repos/jul-sh/Kerberos/releases"
+    local tmp_json
+    tmp_json=$(mktemp)
+
+    curl -fsSL "$api_url" -o "$tmp_json"
+
+    # Get the first release (latest, including prereleases)
+    local version url sha256
+    version=$(jq -r '.[0].tag_name' "$tmp_json")
+    url=$(jq -r '.[0].assets[] | select(.name | test("^Kerberos-[0-9].*\\.zip$")) | .browser_download_url' "$tmp_json")
+    rm "$tmp_json"
+
+    echo "  Fetching hash for $version..."
+    sha256=$(curl -fsSL "$url" | shasum -a 256 | awk '{print $1}')
+
+    # Update version and sha256 in home.nix (matched by trailing marker comment)
+    perl -i -pe "s|version = \".*?\"; # kerberos|version = \"$version\"; # kerberos|" nix/home.nix
+    perl -i -pe "s|sha256 = \".*?\"; # kerberos|sha256 = \"$sha256\"; # kerberos|" nix/home.nix
+
+    echo "  Updated to $version"
+}
+
 main() {
     update_flake
     update_iosevka_charon
     update_recursive_charon
+    update_kerberos
     echo "Done."
 }
 

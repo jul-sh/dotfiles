@@ -36,6 +36,22 @@ let
     '';
   };
 
+  kerberos = pkgs.stdenvNoCC.mkDerivation rec {
+    pname = "kerberos";
+    version = "v1.1.0"; # kerberos
+    src = pkgs.fetchurl {
+      url = "https://github.com/jul-sh/Kerberos/releases/download/${version}/Kerberos-${lib.removePrefix "v" version}.zip";
+      sha256 = "990e1637b4a2268e19123433ed540bdb7f8094e71139c56ea3f9114bc59ccc6c"; # kerberos
+    };
+    nativeBuildInputs = [ pkgs.unzip ];
+    sourceRoot = ".";
+    dontFixup = true;
+    installPhase = ''
+      mkdir -p $out/share/fonts/truetype
+      find . -path '*/variable/*.ttf' -exec cp {} $out/share/fonts/truetype/ \;
+    '';
+  };
+
   keytapPackage = inputs.keytap.packages.${pkgs.system}.default or null;
 in
 {
@@ -59,6 +75,7 @@ in
     nodejs
     iosevka-charon
     recursive-charon
+    kerberos
   ] ++ lib.optional (keytapPackage != null) keytapPackage;
 
   # --- 2. Dotfiles ---
@@ -78,6 +95,10 @@ in
     };
     "Library/Fonts/recursive-charon" = {
       source = "${recursive-charon}/share/fonts/truetype";
+      recursive = true;
+    };
+    "Library/Fonts/kerberos" = {
+      source = "${kerberos}/share/fonts/truetype";
       recursive = true;
     };
   };
