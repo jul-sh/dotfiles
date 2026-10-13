@@ -38,18 +38,21 @@ let
 
   kerberos = pkgs.stdenvNoCC.mkDerivation rec {
     pname = "kerberos";
-    version = "v1.1.0"; # kerberos
+    version = "v1.2.3"; # kerberos
     src = pkgs.fetchurl {
       url = "https://github.com/jul-sh/Kerberos/releases/download/${version}/Kerberos-${lib.removePrefix "v" version}.zip";
-      sha256 = "990e1637b4a2268e19123433ed540bdb7f8094e71139c56ea3f9114bc59ccc6c"; # kerberos
+      sha256 = "411639a8435c35db9d76bb5affffd87496a45692387c4f7da04a1acea79d4b4f"; # kerberos
     };
     nativeBuildInputs = [ pkgs.unzip ];
     sourceRoot = ".";
     dontFixup = true;
     installPhase = ''
       mkdir -p $out/share/fonts/truetype
-      install -m 444 ./*/variable/'Kerberos[wght].ttf' $out/share/fonts/truetype/Kerberos-VF.ttf
-      install -m 444 ./*/variable/'Kerberos-Italic[wght].ttf' $out/share/fonts/truetype/Kerberos-Italic-VF.ttf
+      roman=$(find . -type f -path '*/variable/*' -name 'Kerberos*.ttf' ! -name '*Italic*' -print -quit)
+      italic=$(find . -type f -path '*/variable/*' -name 'Kerberos-Italic*.ttf' -print -quit)
+      test -n "$roman" -a -n "$italic"
+      install -m 444 "$roman" $out/share/fonts/truetype/Kerberos-VF.ttf
+      install -m 444 "$italic" $out/share/fonts/truetype/Kerberos-Italic-VF.ttf
     '';
   };
 
