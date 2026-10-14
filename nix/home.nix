@@ -4,10 +4,10 @@
 let
   iosevka-charon = pkgs.stdenvNoCC.mkDerivation rec {
     pname = "iosevka-charon";
-    version = "v34.300"; # iosevka-charon
+    version = "v34.802"; # iosevka-charon
     src = pkgs.fetchurl {
       url = "https://github.com/jul-sh/iosevka-charon/releases/download/${version}/iosevka-charon.zip";
-      sha256 = "138c8fad01e0b0c5dfc37908cda25fae85e6c3512da6974a2dcfc2b162def2a4"; # iosevka-charon
+      sha256 = "a453733116aad7313576bb02486cc470e2497902d435b905cd8796a99f4baaa7"; # iosevka-charon
     };
     nativeBuildInputs = [ pkgs.unzip ];
     sourceRoot = ".";
@@ -38,10 +38,10 @@ let
 
   kerberos = pkgs.stdenvNoCC.mkDerivation rec {
     pname = "kerberos";
-    version = "v1.2.3"; # kerberos
+    version = "v1.2.4"; # kerberos
     src = pkgs.fetchurl {
       url = "https://github.com/jul-sh/Kerberos/releases/download/${version}/Kerberos-${lib.removePrefix "v" version}.zip";
-      sha256 = "411639a8435c35db9d76bb5affffd87496a45692387c4f7da04a1acea79d4b4f"; # kerberos
+      sha256 = "89674dcc8cc5c80d941e3ee849f8273ee577a653e3079bba10d92f253e2927c3"; # kerberos
     };
     nativeBuildInputs = [ pkgs.unzip ];
     sourceRoot = ".";
