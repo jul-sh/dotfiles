@@ -169,6 +169,50 @@ test_setup_scope_dispatch() {
     [[ "$output" == *system* ]] || fail "system scope dispatched incorrectly"
 }
 
+test_screen_lock_configuration() {
+    local fixture="$TEST_ROOT/screen-lock"
+    mkdir -p "$fixture"
+
+    (
+        source "$REPO_ROOT/macos/setup.sh"
+        screen_lock_status() { echo "screenLock delay is immediate"; }
+        require_immediate_screen_lock() { touch "$fixture/unexpected-set"; }
+        configure_screen_lock
+    )
+    [[ ! -e "$fixture/unexpected-set" ]] || fail "immediate screen lock was configured again"
+
+    (
+        source "$REPO_ROOT/macos/setup.sh"
+        screen_lock_status() {
+            if [[ -e "$fixture/configured" ]]; then
+                echo "screenLock delay is immediate"
+            else
+                echo "screenLock delay is 300 seconds"
+            fi
+        }
+        require_immediate_screen_lock() { touch "$fixture/configured"; }
+        configure_screen_lock
+    )
+    [[ -e "$fixture/configured" ]] || fail "non-immediate screen lock was not configured"
+
+    local output
+    if output=$(
+        {
+            source "$REPO_ROOT/macos/setup.sh"
+            open_screen_lock_tty() { return 1; }
+            die() { echo "error: $*" >&2; return 1; }
+            require_immediate_screen_lock
+        } 2>&1
+    ); then
+        fail "screen lock configuration continued without a terminal"
+    fi
+    [[ "$output" == *"setting the screen lock requires an interactive terminal"* ]] || \
+        fail "missing no-terminal screen lock error"
+
+    assert_contains "$REPO_ROOT/macos/setup.sh" \
+        '/usr/sbin/sysadminctl -screenLock immediate -password - <&9'
+}
+
 tests=(
     test_bootstrap_fresh_and_clean_update
     test_bootstrap_dirty_update
@@ -177,6 +221,7 @@ tests=(
     test_local_host_uses_runtime_user
     test_persisted_user_scope_skips_system_nix_config
     test_setup_scope_dispatch
+    test_screen_lock_configuration
 )
 
 for test_name in "${tests[@]}"; do

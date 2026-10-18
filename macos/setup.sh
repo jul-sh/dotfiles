@@ -305,7 +305,46 @@ install_launchd_job() {
     esac
 }
 
+screen_lock_status() {
+    /usr/sbin/sysadminctl -screenLock status 2>&1
+}
+
+open_screen_lock_tty() {
+    exec 9<>/dev/tty
+}
+
+require_immediate_screen_lock() {
+    if ! open_screen_lock_tty 2>/dev/null; then
+        die "setting the screen lock requires an interactive terminal"
+        return 1
+    fi
+    if /usr/sbin/sysadminctl -screenLock immediate -password - <&9; then
+        exec 9>&-
+    else
+        local result=$?
+        exec 9>&-
+        return "$result"
+    fi
+}
+
+configure_screen_lock() {
+    local status
+    status=$(screen_lock_status || true)
+    if [[ "$status" == *"screenLock delay is immediate"* ]]; then
+        return
+    fi
+
+    echo "Requiring a password immediately after the screen saver starts or the display turns off..."
+    require_immediate_screen_lock
+
+    status=$(screen_lock_status || true)
+    [[ "$status" == *"screenLock delay is immediate"* ]] || \
+        die "could not verify the immediate screen lock setting"
+}
+
 configure_user_defaults() {
+    configure_screen_lock
+
     # Bind Shift+Cmd+V to "Paste and Match Style" (paste without formatting) globally.
     # @=Cmd, $=Shift, ~=Option; @$v = Shift+Cmd+V
     # First clear any stale overrides from when Cmd+V was swapped to match-style,
