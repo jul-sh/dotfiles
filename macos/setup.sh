@@ -315,6 +315,10 @@ configure_user_defaults() {
     defaults write NSGlobalDomain NSUserKeyEquivalents -dict-add "Paste and Match Style" '@$v'
 
     defaults write com.apple.screencapture location -string "${HOME}/Downloads"
+
+    # Disable UI sound effects, including the screenshot shutter.
+    defaults write NSGlobalDomain com.apple.sound.uiaudio.enabled -bool false
+
     defaults write NSGlobalDomain AppleShowAllExtensions -bool true
     defaults write NSGlobalDomain AppleAccentColor -int 6
     defaults write NSGlobalDomain AppleHighlightColor -string "1.000000 0.749020 0.823529 Pink"
